@@ -1,0 +1,16 @@
+{
+  "name": "lab04-ex1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "jsdom": "27.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "vitest": "3.2.4"
+  }
+}
