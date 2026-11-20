@@ -28,7 +28,7 @@ export default function App() {
   const [status, setStatus] = useState('idle');
 
   return (
-    <main className="person-page">
+    <>
       <h1 id={headingId}>Thông tin cá nhân</h1>
       <p className="person-detail-visually-hidden" aria-live="polite" aria-atomic="true">
         {statusMessages[status]}
@@ -46,6 +46,6 @@ export default function App() {
           <DetailStatus status="loaded" onChange={setStatus} />
         </Suspense>
       </section>
-    </main>
+    </>
   );
 }

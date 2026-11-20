@@ -1,18 +1,3 @@
-.person-page {
-  box-sizing: border-box;
-  max-inline-size: 45rem;
-  margin-inline: auto;
-  padding: clamp(1rem, 5vw, 3rem) clamp(0.75rem, 4vw, 1.5rem);
-  color: #17273c;
-  font-family: system-ui, sans-serif;
-}
-
-.person-page h1 {
-  margin: 0 0 1rem;
-  font-size: clamp(1.5rem, 5vw, 2rem);
-  line-height: 1.2;
-}
-
 .person-detail-panel {
   box-sizing: border-box;
   min-block-size: 7rem;
