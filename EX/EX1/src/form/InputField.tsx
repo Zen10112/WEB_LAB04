@@ -29,7 +29,7 @@ export default function InputField({ name, label, type = 'text', placeholder }: 
         aria-invalid={hasError || undefined}
         aria-describedby={hasError ? errorId : undefined}
       />
-      {hasError && <p id={errorId}>{error}</p>}
+      {hasError && <p className="contact-form-error" id={errorId}>{error}</p>}
     </div>
   );
 }
