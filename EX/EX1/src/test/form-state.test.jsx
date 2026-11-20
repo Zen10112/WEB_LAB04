@@ -1,5 +1,5 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import { FormProvider, useFormContext } from '../form/FormContext';
 
 afterEach(cleanup);
@@ -55,4 +55,31 @@ test('derives errors and validity in the same render as field changes', () => {
     });
     expect(isValid).toBe(Boolean(name && email));
   }
+});
+
+test('preserves both batched field updates without React warnings', () => {
+  const error = vi.spyOn(console, 'error');
+  const warn = vi.spyOn(console, 'warn');
+
+  try {
+    const { result } = renderHook(useFormContext, { wrapper: Wrapper });
+    act(() => {
+      result.current.setFieldValue('name', 'Minh Anh');
+      result.current.setFieldValue('email', 'minh@example.test');
+    });
+
+    expect(result.current.values).toEqual({ name: 'Minh Anh', email: 'minh@example.test' });
+    expect(result.current.isValid).toBe(true);
+    expect(error).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  } finally {
+    error.mockRestore();
+    warn.mockRestore();
+  }
+});
+
+test('reports a clear error when used without a FormProvider', () => {
+  expect(() => renderHook(useFormContext)).toThrow(
+    'useFormContext must be used within a FormProvider.',
+  );
 });
