@@ -47,3 +47,43 @@ test('submits the latest valid values and clears confirmation after an edit', ()
   expect(email).toHaveAccessibleDescription('Nhập email.');
   expect(onSubmit).toHaveBeenCalledTimes(1);
 });
+
+test('keeps the last valid JSON until the next valid submission', () => {
+  const { container } = render(<SimpleForm />);
+  const form = screen.getByRole('form');
+  const name = screen.getByRole('textbox', { name: 'Họ và tên' });
+  const email = screen.getByRole('textbox', { name: 'Email' });
+  const code = () => container.querySelector('pre code');
+
+  expect(code()).not.toBeInTheDocument();
+  fireEvent.submit(form);
+  expect(code()).not.toBeInTheDocument();
+
+  const first = { name: 'Minh Anh', email: 'first@example.test' };
+  fireEvent.change(name, { target: { value: first.name } });
+  fireEvent.change(email, { target: { value: first.email } });
+  expect(code()).not.toBeInTheDocument();
+  fireEvent.submit(form);
+  expect(code()?.textContent).toBe(JSON.stringify(first, null, 2));
+
+  fireEvent.change(email, { target: { value: 'invalid' } });
+  fireEvent.submit(form);
+  expect(code()?.textContent).toBe(JSON.stringify(first, null, 2));
+
+  const second = { ...first, email: 'second@example.test' };
+  fireEvent.change(email, { target: { value: second.email } });
+  expect(code()?.textContent).toBe(JSON.stringify(first, null, 2));
+  fireEvent.submit(form);
+  expect(code()?.textContent).toBe(JSON.stringify(second, null, 2));
+});
+
+test('renders Unicode, quotes, backslashes and markup-like characters as JSON text', () => {
+  const initialValues = { name: 'Ánh "<em> & \\ "', email: 'anh@example.test' };
+  const { container } = render(<SimpleForm initialValues={initialValues} />);
+
+  fireEvent.submit(screen.getByRole('form'));
+
+  const code = container.querySelector('pre code');
+  expect(code?.textContent).toBe(JSON.stringify(initialValues, null, 2));
+  expect(code?.querySelector('em')).toBeNull();
+});

@@ -37,3 +37,28 @@
   color: #8c1d24;
   font-weight: 600;
 }
+
+.submitted-data {
+  min-inline-size: 0;
+  max-inline-size: 28rem;
+  margin: 1rem 0 0;
+}
+
+.submitted-data figcaption {
+  font-weight: 600;
+}
+
+.submitted-data pre {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid #dbe4ee;
+  border-radius: 0.375rem;
+  background: #f8fafc;
+  color: #17273c;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.submitted-data code {
+  font: 0.875rem/1.5 ui-monospace, monospace;
+}
