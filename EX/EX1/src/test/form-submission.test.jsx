@@ -87,3 +87,17 @@ test('renders Unicode, quotes, backslashes and markup-like characters as JSON te
   expect(code?.textContent).toBe(JSON.stringify(initialValues, null, 2));
   expect(code?.querySelector('em')).toBeNull();
 });
+
+test('keeps form values and the inspector unchanged if a submit consumer edits its payload', () => {
+  const initialValues = { name: 'Minh Anh', email: 'minh@example.test' };
+  const onSubmit = vi.fn((payload) => {
+    payload.email = 'changed@example.test';
+  });
+  const { container } = render(<SimpleForm initialValues={initialValues} onSubmit={onSubmit} />);
+
+  fireEvent.submit(screen.getByRole('form'));
+
+  expect(onSubmit).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue(initialValues.email);
+  expect(JSON.parse(container.querySelector('pre code').textContent)).toEqual(initialValues);
+});

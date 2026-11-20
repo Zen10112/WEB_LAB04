@@ -1,6 +1,7 @@
 import { Link, Route, Routes, useParams } from 'react-router';
 import App from './App.jsx';
 import { findPersonByRouteId, people } from './data/people.js';
+import SimpleForm from './form/SimpleForm';
 import MainLayout from './layouts/MainLayout.jsx';
 import PeopleLayout from './layouts/PeopleLayout.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -9,7 +10,19 @@ function Home() {
   return (
     <>
       <h1>Trang chủ</h1>
-      <Link to="/people">Xem thông tin cá nhân</Link>
+      <ul>
+        <li><Link to="/people">Xem thông tin cá nhân</Link></li>
+        <li><Link to="/form">Mở biểu mẫu liên hệ</Link></li>
+      </ul>
+    </>
+  );
+}
+
+function ContactPage() {
+  return (
+    <>
+      <h1>Biểu mẫu liên hệ</h1>
+      <SimpleForm />
     </>
   );
 }
@@ -43,6 +56,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
+        <Route path="form" element={<ContactPage />} />
         <Route path="people" element={<PeopleLayout people={people} />}>
           <Route index element={<PeopleIndex />} />
           <Route path=":id" element={<PeopleDetailRoute />} />

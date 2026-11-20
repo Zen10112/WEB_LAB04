@@ -13,10 +13,11 @@ const contactRules: ValidationRules = {
   email: [required('Nhập email.'), email('Email không hợp lệ.')],
 };
 
-type SubmitHandler = (values: FormValues) => void;
-type SimpleFormProps = Partial<FormProviderOptions> & { onSubmit?: SubmitHandler };
+type SimpleFormProps = Partial<FormProviderOptions> & {
+  onSubmit?: (values: FormValues) => void;
+};
 
-function ContactForm({ onSubmit }: { onSubmit?: SubmitHandler }) {
+function ContactForm({ onSubmit }: Pick<SimpleFormProps, 'onSubmit'>) {
   const { values, isValid } = useFormContext();
   const [submittedValues, setSubmittedValues] = useState<FormValues | null>(null);
 
@@ -28,7 +29,7 @@ function ContactForm({ onSubmit }: { onSubmit?: SubmitHandler }) {
       return;
     }
 
-    onSubmit?.(values);
+    onSubmit?.({ ...values });
     setSubmittedValues(values);
   }
 
