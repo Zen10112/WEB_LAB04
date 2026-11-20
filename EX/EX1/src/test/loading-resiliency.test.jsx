@@ -66,6 +66,7 @@ test('starts importing on render and passes the profile to the real PersonDetail
   await finishImport();
 
   expect(importStarted).toHaveBeenCalledTimes(1);
+  expect(renderDetail).toHaveBeenCalledTimes(1);
   expect(renderDetail.mock.lastCall[0]).toEqual({
     person: { name: 'Nguyễn Minh Anh', role: 'Sinh viên' },
   });

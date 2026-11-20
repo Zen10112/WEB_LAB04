@@ -23,7 +23,6 @@
   box-shadow: 0 0.25rem 1rem rgb(23 39 60 / 7%);
 }
 
-.person-detail-panel > dl,
 .person-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
@@ -83,7 +82,6 @@
     min-block-size: 9.25rem;
   }
 
-  .person-detail-panel > dl,
   .person-detail-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: repeat(2, minmax(1.25rem, auto) minmax(1.75rem, auto));

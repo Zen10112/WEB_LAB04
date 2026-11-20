@@ -4,7 +4,6 @@ import { expect, test } from 'vitest';
 
 test('production dynamically imports PersonDetail from its own chunk', async () => {
   const { output } = await build({
-    configFile: false,
     logLevel: 'silent',
     build: { manifest: true, write: false },
   });

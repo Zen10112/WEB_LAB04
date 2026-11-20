@@ -1,10 +1,10 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
+import viteConfig from './vite.config.js';
 
-export default defineConfig({
-  esbuild: { jsx: 'automatic' },
+export default mergeConfig(viteConfig, defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     clearMocks: true,
   },
-});
+}));

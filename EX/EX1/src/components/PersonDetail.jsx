@@ -1,8 +1,6 @@
-import React from 'react';
-
 export default function PersonDetail({ person }) {
   return (
-    <dl>
+    <dl className="person-detail-grid">
       <dt>Họ và tên</dt>
       <dd>{person.name}</dd>
       <dt>Vai trò</dt>
