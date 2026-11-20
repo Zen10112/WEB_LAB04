@@ -1,12 +1,10 @@
-import { lazy, Suspense, useEffect, useId, useState } from 'react';
+import { lazy, Suspense, useEffect, useId, useMemo, useState } from 'react';
 import PersonDetailSkeleton from './components/PersonDetailSkeleton.jsx';
+import { samplePerson } from './data/people.js';
 import './person-detail.css';
 
 const PersonDetail = lazy(() => import('./components/PersonDetail.jsx'));
 
-const samplePerson = { name: 'Nguyễn Minh Anh', role: 'Sinh viên' };
-// Reuse these elements when only the accessible status changes.
-const personDetail = <PersonDetail person={samplePerson} />;
 const skeleton = <PersonDetailSkeleton />;
 const statusMessages = {
   idle: '',
@@ -23,13 +21,15 @@ function DetailStatus({ status, onChange }) {
   return null;
 }
 
-export default function App() {
+export default function App({ person = samplePerson }) {
   const headingId = useId();
   const [status, setStatus] = useState('idle');
+  // Keep the detail stable when only the accessible status changes.
+  const personDetail = useMemo(() => <PersonDetail person={person} />, [person]);
 
   return (
     <>
-      <h1 id={headingId}>Thông tin cá nhân</h1>
+      <h2 id={headingId}>Thông tin cá nhân</h2>
       <p className="person-detail-visually-hidden" aria-live="polite" aria-atomic="true">
         {statusMessages[status]}
       </p>
