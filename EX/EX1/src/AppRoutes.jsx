@@ -1,6 +1,6 @@
 import { Link, Route, Routes, useParams } from 'react-router';
 import App from './App.jsx';
-import { people } from './data/people.js';
+import { findPersonByRouteId, people } from './data/people.js';
 import MainLayout from './layouts/MainLayout.jsx';
 import PeopleLayout from './layouts/PeopleLayout.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -26,14 +26,14 @@ function PeopleIndex() {
 function NotFoundState() {
   return (
     <div role="alert">
-      <h2>Không tìm thấy người này</h2>
+      <h2>404 – Không tìm thấy người này</h2>
     </div>
   );
 }
 
 function PeopleDetailRoute() {
   const { id } = useParams();
-  const person = people.find((entry) => entry.id === id || String(entry.numericId) === id);
+  const person = findPersonByRouteId(people, id);
 
   return person ? <App key={person.id} person={person} /> : <NotFoundState />;
 }

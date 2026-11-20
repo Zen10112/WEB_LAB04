@@ -1,8 +1,11 @@
-import { NavLink, Outlet, useMatch } from 'react-router';
+import { NavLink, Outlet, useLocation, useMatch } from 'react-router';
+import { findPersonByRouteId } from '../data/people.js';
 import './people-layout.css';
 
 export default function PeopleLayout({ people }) {
-  const currentId = useMatch('/people/:id')?.params.id;
+  const { pathname } = useLocation();
+  const match = useMatch('/people/:id');
+  const currentPerson = findPersonByRouteId(people, match?.params.id);
 
   return (
     <>
@@ -11,20 +14,18 @@ export default function PeopleLayout({ people }) {
         <nav className="people-sidebar" aria-labelledby="people-list-heading">
           <h2 id="people-list-heading">Danh sách</h2>
           <ul>
-            {people.map((person) => {
-              // Match numeric deep links without changing the other link URLs.
-              const numericId = String(person.numericId);
-              const linkId = currentId === numericId ? numericId : person.id;
-
-              return (
-                <li key={person.id}>
-                  <NavLink to={`/people/${linkId}`} end>
-                    <span>{person.name}</span>
-                    <span className="people-current-label" aria-hidden="true">Đang xem</span>
-                  </NavLink>
-                </li>
-              );
-            })}
+            {people.map((person) => (
+              <li key={person.id}>
+                <NavLink
+                  to={person === currentPerson ? pathname : `/people/${person.id}`}
+                  caseSensitive
+                  end
+                >
+                  <span>{person.name}</span>
+                  <span className="people-current-label" aria-hidden="true">Đang xem</span>
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </nav>
         <section className="people-detail" aria-label="Chi tiết hồ sơ">
