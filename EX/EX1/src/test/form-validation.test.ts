@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import type { FormValues, ValidateForm, ValidationRules } from '../form/form.types';
 import { validateForm } from '../form/validateForm';
+import { email, minLength, required } from '../form/validationRules';
 
 const evaluate: ValidateForm = validateForm;
 const rules: ValidationRules = {
@@ -34,4 +35,23 @@ test('gives a rule the full current values for cross-field checks', () => {
   };
 
   expect(evaluate(values, crossFieldRules)).toEqual({ email: 'Email phải khác họ tên.' });
+});
+
+test('validates required, minimum length and email format without changing the values', () => {
+  const contactRules: ValidationRules = {
+    name: [required('Required name'), minLength(2, 'Short name')],
+    email: [required('Required email'), email('Invalid email')],
+  };
+
+  expect(evaluate({ name: '  ', email: '' }, contactRules)).toEqual({
+    name: 'Required name',
+    email: 'Required email',
+  });
+  expect(evaluate({ name: ' A ', email: 'an@@example.test' }, contactRules)).toEqual({
+    name: 'Short name',
+    email: 'Invalid email',
+  });
+  const values = Object.freeze({ name: ' An ', email: ' an+form@example.test ' });
+  expect(evaluate(values, contactRules)).toEqual({});
+  expect(values).toEqual({ name: ' An ', email: ' an+form@example.test ' });
 });

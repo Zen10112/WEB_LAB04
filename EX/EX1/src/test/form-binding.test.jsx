@@ -74,3 +74,30 @@ test('associates an existing context error with only the affected field', () => 
   expect(email).toHaveAttribute('aria-describedby', message.id);
   expect(email).toHaveAccessibleDescription('Nhập email.');
 });
+
+test('updates each field error on successive edits using the default form rules', () => {
+  render(<SimpleForm />);
+
+  const name = screen.getByRole('textbox', { name: 'Họ và tên' });
+  const email = screen.getByRole('textbox', { name: 'Email' });
+  expect(name).toHaveAccessibleDescription('Nhập họ tên.');
+  expect(email).toHaveAccessibleDescription('Nhập email.');
+
+  fireEvent.change(name, { target: { value: 'A' } });
+  expect(name).toHaveAccessibleDescription('Họ tên phải có ít nhất 2 ký tự.');
+  expect(email).toHaveAccessibleDescription('Nhập email.');
+
+  fireEvent.change(email, { target: { value: 'an@' } });
+  expect(email).toHaveAccessibleDescription('Email không hợp lệ.');
+  fireEvent.change(name, { target: { value: 'An' } });
+  expect(name).not.toHaveAttribute('aria-invalid');
+  expect(email).toHaveAccessibleDescription('Email không hợp lệ.');
+
+  fireEvent.change(email, { target: { value: 'an@example.test' } });
+  expect(email).not.toHaveAttribute('aria-invalid');
+  expect(screen.queryByText('Email không hợp lệ.')).not.toBeInTheDocument();
+
+  fireEvent.change(email, { target: { value: '' } });
+  expect(email).toHaveAccessibleDescription('Nhập email.');
+  expect(name).not.toHaveAttribute('aria-invalid');
+});

@@ -1,13 +1,17 @@
 import { FormProvider } from './FormContext';
 import InputField from './InputField';
-import type { FormProviderOptions } from './form.types';
+import type { FormProviderOptions, ValidationRules } from './form.types';
+import { email, minLength, required } from './validationRules';
 
 const emptyValues = { name: '', email: '' };
-const noRules = {};
+const contactRules: ValidationRules = {
+  name: [required('Nhập họ tên.'), minLength(2, 'Họ tên phải có ít nhất 2 ký tự.')],
+  email: [required('Nhập email.'), email('Email không hợp lệ.')],
+};
 
 export default function SimpleForm({
   initialValues = emptyValues,
-  validationRules = noRules,
+  validationRules = contactRules,
 }: Partial<FormProviderOptions>) {
   return (
     <FormProvider initialValues={initialValues} validationRules={validationRules}>

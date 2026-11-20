@@ -2,29 +2,12 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react';
 import type {
   FormContextValue,
-  FormField,
   FormProviderOptions,
   FormValues,
-  ValidationRules,
 } from './form.types';
+import { validateForm } from './validateForm';
 
 export const FormContext = createContext<FormContextValue | null>(null);
-
-function getFieldErrors(values: FormValues, validationRules: ValidationRules) {
-  const errors: Partial<Record<FormField, string>> = {};
-
-  for (const field of Object.keys(values) as FormField[]) {
-    for (const rule of validationRules[field] ?? []) {
-      const message = rule(values[field], values);
-      if (message !== undefined) {
-        errors[field] = message;
-        break;
-      }
-    }
-  }
-
-  return errors;
-}
 
 type FormProviderProps = FormProviderOptions & { children: ReactNode };
 
@@ -38,7 +21,7 @@ export function FormProvider({ initialValues, validationRules, children }: FormP
   }, []);
 
   const form = useMemo<FormContextValue>(() => {
-    const errors = getFieldErrors(values, validationRules);
+    const errors = validateForm(values, validationRules);
     return {
       values,
       errors,
