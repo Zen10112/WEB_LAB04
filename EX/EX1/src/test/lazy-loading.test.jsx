@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import App from '../App.jsx';
 
@@ -42,10 +42,17 @@ test('shows the accessible fallback until PersonDetail loads, then renders witho
     // 1. The detail must not render while the import is pending.
     expect(screen.queryByRole('article', { name: 'Person detail loaded' })).not.toBeInTheDocument();
 
-    // 2. Skeleton must expose the agreed loading attributes.
-    const fallback = container.querySelector('[aria-busy="true"][aria-live="polite"]');
+    // 2. The named region is busy and the decorative fallback is visible.
+    const panel = screen.getByRole('region', { name: 'Thông tin cá nhân', busy: true });
+    const fallback = panel.querySelector('.person-detail-skeleton');
+    const liveRegion = screen.getByText('Đang tải thông tin cá nhân…');
     expect(fallback).toBeInTheDocument();
     expect(fallback).toBeVisible();
+    expect(fallback).toHaveAttribute('aria-hidden', 'true');
+    expect(fallback.querySelector('[tabindex]')).toBeNull();
+    expect(panel).not.toContainElement(liveRegion);
+    expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+    expect(container.querySelectorAll('[aria-live]')).toHaveLength(1);
 
     await act(async () => {
       moduleGate.resolve();
@@ -56,10 +63,10 @@ test('shows the accessible fallback until PersonDetail loads, then renders witho
     expect(await screen.findByRole('article', { name: 'Person detail loaded' })).toBeVisible();
 
     // 4. Suspense replaces, rather than retains, its fallback.
-    await waitFor(() => {
-      expect(fallback).not.toBeInTheDocument();
-      expect(container.querySelector('[aria-busy="true"]')).not.toBeInTheDocument();
-    });
+    expect(fallback).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Thông tin cá nhân', busy: false })).toBe(panel);
+    expect(screen.getByText('Đã tải thông tin cá nhân.')).toBe(liveRegion);
+    expect(screen.queryByText('Đang tải thông tin cá nhân…')).not.toBeInTheDocument();
 
     // 5. Rendering after the import must produce no React or runtime errors.
     expect(consoleErrors).toEqual([]);
