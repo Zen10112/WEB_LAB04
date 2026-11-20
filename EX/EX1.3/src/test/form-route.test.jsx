@@ -27,11 +27,10 @@ test('opens the form from home, submits, and leaves and reopens the form cleanly
       name: 'Minh Anh', email: 'minh@example.test',
     });
 
-    fireEvent.click(within(header).getByRole('link', { name: 'Thông tin cá nhân' }));
-    expect(await within(main).findByRole('heading', { name: 'Danh bạ' })).toBeVisible();
+    fireEvent.click(within(header).getByRole('link', { name: 'Trang chủ' }));
+    expect(await within(main).findByRole('heading', { name: 'Trang chủ' })).toBeVisible();
     expect(main.querySelector('pre code')).toBeNull();
 
-    fireEvent.click(within(header).getByRole('link', { name: 'Trang chủ' }));
     fireEvent.click(await within(main).findByRole('link', { name: 'Mở biểu mẫu liên hệ' }));
     expect(await within(main).findByRole('textbox', { name: 'Email' })).toHaveValue('');
     expect(main.querySelector('pre code')).toBeNull();
