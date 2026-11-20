@@ -23,11 +23,19 @@ function PeopleIndex() {
   );
 }
 
+function NotFoundState() {
+  return (
+    <div role="alert">
+      <h2>Không tìm thấy người này</h2>
+    </div>
+  );
+}
+
 function PeopleDetailRoute() {
   const { id } = useParams();
-  const person = people.find((entry) => entry.id === id);
+  const person = people.find((entry) => entry.id === id || String(entry.numericId) === id);
 
-  return person ? <App key={person.id} person={person} /> : <h2>Không tìm thấy người này</h2>;
+  return person ? <App key={person.id} person={person} /> : <NotFoundState />;
 }
 
 export default function AppRoutes() {
