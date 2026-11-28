@@ -182,6 +182,7 @@ const swipeKinds = { left: 'PASS', right: 'LIKE', up: 'SKIP' };
 /** @param {{ profiles: Profile[] }} props */
 export function SwipeDeckSession({ profiles }) {
   const [history, setHistory] = useState(/** @type {SwipeRecord[]} */ ([]));
+  const score = history.reduce((total, { kind }) => total + (kind === 'LIKE' ? 10 : -5), 0);
   const reviewed = new Set(history.map(({ profileId }) => profileId));
   const remaining = profiles.filter(({ id }) => !reviewed.has(id));
   const currentId = remaining[0]?.id;
@@ -201,6 +202,6 @@ export function SwipeDeckSession({ profiles }) {
   }
 
   return (
-    <SwipeDeck profiles={remaining} score={0} onSwipe={handleSwipe} onUndo={history.length ? handleUndo : undefined} />
+    <SwipeDeck profiles={remaining} score={score} onSwipe={handleSwipe} onUndo={history.length ? handleUndo : undefined} />
   );
 }

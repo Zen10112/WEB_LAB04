@@ -152,3 +152,50 @@ test('keyboard, pointer and buttons advance the same queue and undo restores car
   assert.equal(document.querySelectorAll('.deck-stats dd')[1].textContent, '3');
   assert.equal(undo.getAttribute('aria-disabled'), 'true');
 });
+
+test('score and queue follow the active stack through LIFO undo and a replacement swipe', async (t) => {
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  const assertDeck = (card, score, count) => {
+    const title = deck.querySelector('.profile-card h3');
+    const totals = [...document.querySelectorAll('.deck-stats dd')].map((value) => Number(value.textContent));
+    assert.equal(title?.firstChild.textContent.trim() ?? null, card, 'current card');
+    assert.deepEqual(totals, [score, count], 'score and remaining count');
+  };
+
+  assertDeck('Mai', 0, 3);
+  const steps = [
+    ['ArrowRight', 'Vy', 10, 2], // LIKE
+    ['ArrowLeft', 'An', 5, 1], // PASS
+    ['ArrowUp', null, 0, 0], // SKIP
+    ['Backspace', 'An', 5, 1],
+    ['Backspace', 'Vy', 10, 2],
+    ['Backspace', 'Mai', 0, 3],
+    ['Backspace', 'Mai', 0, 3], // Empty history
+    ['ArrowUp', 'Vy', -5, 2], // A new action for the restored card
+    ['ArrowLeft', 'An', -10, 1],
+    ['Backspace', 'Vy', -5, 2],
+    ['Backspace', 'Mai', 0, 3],
+  ];
+
+  for (const [key, card, score, count] of steps) {
+    await press(deck, key);
+    assertDeck(card, score, count);
+  }
+});
+
+test('multiple intents for the same rendered profile count as one history entry', async (t) => {
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  await act(() => {
+    deck.querySelector('.swipe-right').click();
+    deck.querySelector('.swipe-left').click();
+  });
+
+  const score = document.querySelector('.deck-stats dd');
+  assert.equal(score.textContent, '10');
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Vy\b/);
+
+  await press(deck, 'Backspace');
+  assert.equal(score.textContent, '0');
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Mai\b/);
+  assert.equal(deck.querySelector('.swipe-undo').getAttribute('aria-disabled'), 'true');
+});

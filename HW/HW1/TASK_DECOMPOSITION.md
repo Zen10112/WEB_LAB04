@@ -10,7 +10,7 @@ For each assigned feature task, confirm its contract and acceptance criteria, wr
 
 | Unit | Inputs | Behavior |
 | --- | --- | --- |
-| `SwipeDeckSession` | Ordered sample profiles | Stores active swipe history and provides shared swipe and undo handlers. Passes remaining profiles to `SwipeDeck`. |
+| `SwipeDeckSession` | Ordered sample profiles | Stores an active stack of `{ profileId, kind }` records and provides shared swipe and undo handlers. Derives the remaining profiles and score from that stack for `SwipeDeck`. |
 | `SwipeDeck` | Ordered remaining profiles, score, loading/error/ready status, pending state, and optional intent callbacks | Displays the first card and previews the upcoming queue. The focusable deck maps keyboard shortcuts to the same callbacks as the controls and active card. |
 | `ProfileCard` | `profile: Profile`, `onSwipe(direction)` | Renders the active profile and maps horizontal pointer gestures to at most one swipe intent. |
 | `SwipeControls` | `canSwipe`, `canUndo`, `onSwipe(direction)`, `onUndo()` | Exposes labeled buttons for the same swipe and undo intents as keyboard and pointer input. |
@@ -45,7 +45,7 @@ type DeckSnapshot = {
 - Store ordered profiles and the latest confirmed snapshot. Track loading, request errors, and any in-flight mutation separately. Keep the current pointer ID and gesture origin transient.
 - Derive the remaining queue by filtering reviewed profile IDs out of the ordered profiles. The queue head is the current card. Undo removes the last active swipe and restores that card to the head. The empty-history undo control is disabled.
 - `ArrowLeft` sends `PASS`, `ArrowRight` sends `LIKE`, `ArrowUp` sends `SKIP`, and `Backspace` undoes the most recent swipe. Handle these keys only within the deck, skip editable fields and modified keys, and ignore auto-repeat. A primary pointer gesture starting on the current card sends left or right only when its horizontal displacement exceeds 50 CSS pixels. Cancelled, mismatched, and already-completed pointer events do not change the queue. An empty queue still supports undo when history exists.
-- Proposed scoring is `LIKE` +10, `PASS` and `SKIP` −5. Reduce the active history from zero on render. Undo changes the score through the same calculation. Reviewed and remaining counts are also derived.
+- Scoring is `LIKE` +10 and every other swipe −5. Reduce the active history from zero on render. Undo pops the last record and updates both the queue and score through their existing derivations. Undo with an empty stack leaves both unchanged.
 
 ## API contract
 

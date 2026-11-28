@@ -24,3 +24,7 @@ For each observed AI error, record the affected task, the evidence and reproduct
 - **Cause** — The Chrome DevTools smoke test sent `button: 'none'` on `mouseMoved` during a left-button drag. Chrome lost capture during that simulated sequence.
 - **Correction** — Keep `button: 'left'` on the move event for the smoke test and set `buttons` to `0` on release. The app's pointer handlers needed no change for this failure.
 - **Verification** — Chrome passed the 50 px boundary, outside-card drag, keyboard shortcuts, buttons, exhausted state, undo, and text-field Backspace checks.
+
+## LIFO undo and derived score
+
+No new AI implementation errors were observed. Both new tests failed before implementation because the displayed score was fixed at zero. After deriving the score from history, all eight frontend tests and the build passed.
