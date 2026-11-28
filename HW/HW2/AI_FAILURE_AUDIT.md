@@ -1,56 +1,77 @@
 # HW2 AI Failure Audit
 
-No verified AI-generated failures were identified during scaffold creation.
+Final engineering review of the Fair-Play Appeal Tribunal at baseline commit `4e20397`, including the Retry focus fix from this review. The review found five verified AI-generated failures. Three representative incidents are detailed below and two are summarized. Evidence comes from source, diffs, and captured test or browser output. Pre-fix snippets for changes corrected before commit come from their implementation logs. Deliberate TDD failures for missing behavior are excluded.
 
-Record observed AI-generated failures with the affected file, original output, supporting evidence, root cause, engineering fix, and verification status. Preserve genuine test output or diffs. Deliberate TDD failures for missing behavior are excluded.
+## Detailed incidents
 
-## HW2-01 — A 404 path marked a dossier as current
+### HW2-01 — A 404 URL marked a dossier as current
 
+- **Failure ID** — `HW2-01`
+- **Title** — A 404 URL marked a dossier as current
 - **Category** — React Router navigation and accessibility
-- **Affected file** — [FairPlayAppealPortal.jsx](frontend/src/FairPlayAppealPortal.jsx)
-- **Original AI output** — ``<NavLink key={playerID} to={`/dossier/${playerID}`} caseSensitive>{displayName}</NavLink>``
-- **Evidence** — `node --test --test-name-pattern 'unknown player IDs'` failed after routing had been implemented. Its assertion reported `/dossier/himass/other should have no current nav link`.
-- **Root cause** — The dossier `NavLink` matched path prefixes, so it supplied `aria-current="page"` even when the router rendered the 404 fallback.
-- **Engineering fix** — Add `end` to the dossier `NavLink` so the active state matches the dossier route itself.
-- **Verification** — All four route tests and the TypeScript/Vite build passed after the fix. Chrome confirmed the 404 had no current navigation link and the recovery link worked with Enter.
+- **Affected File** — [frontend/src/FairPlayAppealPortal.jsx](frontend/src/FairPlayAppealPortal.jsx)
+- **Original AI Output** — ``<NavLink key={playerID} to={`/dossier/${playerID}`} caseSensitive>{displayName}</NavLink>``
+- **Evidence** — After routing was implemented, `node --test --test-name-pattern 'unknown player IDs'` failed with `/dossier/himass/other should have no current nav link`.
+- **Root Cause** — `NavLink` matched the dossier path prefix and set `aria-current="page"` while the router rendered the 404 fallback.
+- **Engineering Fix** — Add `end` for exact dossier matching in `820667b`. When the nested appeal route was added, prefix matching was limited to the recognized appeal route so its parent link remains current.
+- **Verification Result** — The final route suite passes for valid dossiers and unknown paths, including `/dossier/himass/other`. The routing-stage Chrome run also confirmed the 404 had no current link and that Enter activated its recovery link.
 - **Status** — Detected & Fixed
 
-## HW2-02 — Invalid-field focus failed type checking
+### HW2-04 — A malformed route parameter returned HTTP 500
 
-- **Category** — TypeScript and form accessibility
-- **Affected file** — [AppealForm.jsx](frontend/src/form/AppealForm.jsx)
-- **Original AI output** — ``event.currentTarget.querySelector(`[name="${firstError}"]`)?.focus();``
-- **Evidence** — After the form was implemented, `npm run build` failed with `TS2339: Property 'focus' does not exist on type 'Element'.`
-- **Engineering fix** — Find the first invalid control through `form.elements.namedItem()` and narrow it to `HTMLElement` before focusing it.
-- **Verification** — All nine tests and the TypeScript/Vite build passed.
+- **Failure ID** — `HW2-04`
+- **Title** — A malformed route parameter returned HTTP 500
+- **Category** — Express request validation and error handling
+- **Affected File** — [backend/src/app.js](backend/src/app.js)
+- **Original AI Output** — The original error middleware ended with `return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Unexpected server error.' } });` after handling domain and JSON parser errors.
+- **Evidence** — The regression for `GET /api/dossiers/%ZZ` logged `URIError: Failed to decode param '%ZZ'` with `status: 400`. The HTTP assertion failed with `500 !== 400`.
+- **Root Cause** — Express raised the decoding error before the dossier handler ran. The custom middleware fell through to the generic 500 response.
+- **Engineering Fix** — Map a route-decoding `URIError` with status 400 to the JSON `INVALID_PATH` response in `1ceba69`.
+- **Verification Result** — The malformed URL assertion passes in the five-test HTTP suite against local MongoDB. The same suite passes for valid reads and unknown player IDs.
 - **Status** — Detected & Fixed
 
-## HW2-03 — The appeal section referenced a missing heading ID
+### HW2-05 — Retrying a dossier read dropped keyboard focus
 
-- **Category** — Accessible name relationships
-- **Affected file** — [AppealForm.jsx](frontend/src/form/AppealForm.jsx)
-- **Original AI output** — The section used `aria-labelledby="appeal-title"`, while its heading was `<h1>{dossier.displayName} appeal</h1>`.
-- **Evidence** — `node --test --test-name-pattern 'direct appeal route' test/DossierRoutes.test.mjs` failed because the rendered heading had no matching `id`.
-- **Engineering fix** — Give the heading `id="appeal-title"` and keep the association covered by the route test.
-- **Verification** — The route regression and full nine-test suite passed.
+- **Failure ID** — `HW2-05`
+- **Title** — Retrying a dossier read dropped keyboard focus
+- **Category** — Application accessibility and asynchronous navigation
+- **Affected File** — [frontend/src/FairPlayAppealPortal.jsx](frontend/src/FairPlayAppealPortal.jsx)
+- **Original AI Output** — `<button type="button" className="portal-action" onClick={retry}>Retry</button>` in `4e20397`.
+- **Evidence** — During this review, `node --test --test-name-pattern 'failed dossier read' test/DossierRoutes.test.mjs` loaded the dossier after retry but failed `Retry should keep focus in the dossier content`.
+- **Root Cause** — Starting the retry cleared the old error and removed the focused button. The persistent main landmark had no focus target.
+- **Engineering Fix** — Make the shared `main` programmatically focusable with `tabIndex={-1}` and move focus there before retrying. Keep the focus assertion in the dossier-read regression test.
+- **Verification Result** — All 22 frontend tests and the TypeScript/Vite build passed. Chrome recovered from an injected HTTP 503 when Retry was activated with Enter and kept focus on the main landmark after the dossier loaded.
 - **Status** — Detected & Fixed
 
-## Appeal SLA countdown
+## Additional verified incidents
 
-No new verified AI-generated failures were identified. The pre-implementation tests failed because the hook had yet to be added. All 14 frontend tests and the TypeScript/Vite build passed after implementation. A live Chrome check switched between two actual tabs and observed trusted `visibilitychange` events. The test controlled the clock and held interval callbacks to verify that returning to the appeal tab refreshed the countdown immediately and disabled submission after expiration.
+| Failure ID | Evidence and effect | Fix and verification | Status |
+| --- | --- | --- | --- |
+| `HW2-02` | The initial `querySelector(...).focus()` call in `AppealForm.jsx` failed the build with `TS2339: Property 'focus' does not exist on type 'Element'`. | Use `form.elements.namedItem()` and an `HTMLElement` check before calling `focus()`. Landed in `be6d714`. The final build passes and Chrome focuses the first invalid field. | Detected & Fixed |
+| `HW2-03` | The appeal section had `aria-labelledby="appeal-title"`, but the heading had no matching ID. The direct appeal route regression failed on the missing association. | Add `id="appeal-title"` to the heading and retain the route assertion. Landed in `be6d714`. The assertion and final frontend suite pass. | Detected & Fixed |
 
-## HW2-04 — An invalid route encoding returned HTTP 500
+## Slide 29 review
 
-- **Category** — Express request validation
-- **Affected file** — [backend/src/app.js](backend/src/app.js)
-- **Evidence** — After implementation, `npm test -- --test-name-pattern 'reads the seeded dossiers'` requested `/api/dossiers/%ZZ`. Express logged `URIError: Failed to decode param '%ZZ'` with `status: 400`, but the API sent `500` and the test reported `500 !== 400`.
-- **Root cause** — The custom error handler recognized domain and JSON parser errors, then treated Express's route-decoding error as an unexpected failure.
-- **Engineering fix** — Map Express's `URIError` with status 400 to a JSON `INVALID_PATH` response.
-- **Verification** — All five HTTP tests passed on local MongoDB, including the malformed URL regression.
-- **Status** — Detected & Fixed
+| Category | Status | Evidence |
+| --- | --- | --- |
+| React Router v5 syntax | Not Detected | [FairPlayAppealPortal.jsx](frontend/src/FairPlayAppealPortal.jsx) uses React Router v7 `Routes`, `Route element`, `NavLink`, `Outlet`, and `useParams`. Tests exercise direct dossier routes, nested appeal routes, and 404s. |
+| `useEffect` validation loops | Not Detected | [FormContext.tsx](frontend/src/form/FormContext.tsx) calculates `errors` from current values and derives `isValid` during render. Effects manage requests and timers. |
+| Hardcoded database secrets | Not Detected | [database.js](backend/src/database.js) reads `MONGODB_URI` from the environment and validates it against a credential-free loopback URI for `lab04_hw2`. Git ignores the actual `.env` files and tracks the templates. The reviewed HW2 history contained no credential-bearing MongoDB URI. |
+| Removed Mongoose callbacks | Not Detected | The [connection](backend/src/database.js), [seed](backend/seed.js), and [API](backend/src/app.js) use promises and `await`. Read-only dossier and appeal lookups use `.lean()`. The live API tests pass on Mongoose 8 with local MongoDB. |
+| Unlabelled icon buttons | Not Detected | The reviewed actions have visible names, including Submit appeal and Retry. Chrome inspected the form controls and Submit appeal in the accessibility tree and exercised named buttons by keyboard. |
 
-## Frontend API integration
+## Additional engineering checks
 
-No new verified AI-generated failures were identified. The initial contract tests failed as expected while the frontend still used sample data. The final run passed 22 frontend tests, five live API tests, and the TypeScript/Vite build.
+| Area | Status | Evidence |
+| --- | --- | --- |
+| Context validation | Not Detected | Automated tests cover required fields, trimmed length, evidence URL validation, the New evidence dependency, and normalized JSON. Chrome confirmed an invalid submit focuses the first field and sends no request. |
+| Route races and request cleanup | Not Detected | [useDossier.ts](frontend/src/useDossier.ts) aborts on route change or unmount and checks `signal.aborted` before applying read results, errors, or final loading state. Tests exercise a late response and unmount. In Chrome under Slow 3G, `Network.loadingFailed` reported `net::ERR_ABORTED` for the TanVuu GET after switching to Himass. Himass remained active. |
+| SLA timer drift and cleanup | Not Detected | [useAppealSlaTimer.js](frontend/src/useAppealSlaTimer.js) recalculates from the absolute deadline and sampled clock. Tests cover a delayed callback, deadline and offset changes, exact expiration, and interval and listener cleanup. In Chrome, trusted hidden and visible events from switching between two actual tabs triggered a live server clock refresh and corrected the countdown. |
+| Submission and persistence | Not Detected | The frontend locks concurrent writes and reuses the original operation ID after an uncertain response. The live API tests cover concurrent idempotency and expired submissions. Chrome confirmed one saved receipt after two submit intents and verified the record in a separate local test collection. |
+| Full accessibility conformance | Not Verified | Browser verification covered Tab and Enter, focus recovery, accessible form names and error associations, and layout at 320 CSS pixels. A full WCAG or screen-reader audit was outside the verification performed. |
 
-Chrome DevTools Protocol used Chromium's Slow 3G settings. When navigation switched from TanVuu back to Himass, `Network.loadingFailed` marked the in-flight TanVuu GET as canceled with `net::ERR_ABORTED`. The live browser run also verified direct routes, 404, keyboard focus and activation, named and described form controls, invalid submission blocking, one stored receipt for two submit intents, server-driven expiration, reload, and the 320 px layout. The test used a controlled server clock for the SLA boundary and stored its appeal in `appeals_browser_test` within `lab04_hw2`.
+## Final verification
+
+- Frontend `npm test` passed 22 tests. `npm run build` passed TypeScript checking and the Vite build.
+- Backend `npm test` passed five HTTP integration tests against `lab04_hw2`. API test appeals used `appeals_api_test`.
+- Chrome with Express and local MongoDB verified direct routes, reload, 404, Slow 3G cancellation, real tab visibility transitions, Retry via Enter, field labels and error links, idempotent submission, expiration, and the mobile layout. The test used `appeals_browser_test` and controlled the API clock to exercise the deadline boundary.

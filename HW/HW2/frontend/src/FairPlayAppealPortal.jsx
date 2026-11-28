@@ -25,7 +25,7 @@ function PortalLayout() {
           </nav>
         </div>
       </header>
-      <main className="portal-content">
+      <main className="portal-content" tabIndex={-1}>
         <Outlet context={list} />
       </main>
     </>
@@ -70,7 +70,10 @@ function LoadError({ message, retry }) {
   return (
     <div className="portal-request-error">
       <p role="alert">{message}</p>
-      <button type="button" className="portal-action" onClick={retry}>Retry</button>
+      <button type="button" className="portal-action" onClick={(event) => {
+        event.currentTarget.closest('main')?.focus();
+        retry();
+      }}>Retry</button>
     </div>
   );
 }

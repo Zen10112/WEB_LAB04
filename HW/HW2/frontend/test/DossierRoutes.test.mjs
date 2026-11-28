@@ -135,8 +135,10 @@ test('a failed dossier read offers a retry without losing route identity', async
   });
   assert.equal(title(container), 'Dossier unavailable');
   assert.equal(container.querySelector('[role=alert]').textContent, 'The dossier could not be loaded.');
+  container.querySelector('main button').focus();
   await click(container, 'main button');
   assert.equal(title(container), 'Himass dossier');
+  assert.ok(document.activeElement === container.querySelector('main'), 'Retry should keep focus in the dossier content');
   assert.equal(calls.filter(({ pathname }) => pathname === '/api/dossiers/himass').length, 2);
 });
 
