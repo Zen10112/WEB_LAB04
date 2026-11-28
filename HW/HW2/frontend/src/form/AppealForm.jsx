@@ -4,6 +4,7 @@ import { Link, useOutletContext } from 'react-router';
 import { useFormContext } from './FormContext';
 import InputField from './InputField.jsx';
 import { appealGrounds, normalizeAppeal } from './validateAppeal';
+import AppealSlaStatus from '../AppealSlaStatus.jsx';
 
 /** @param {{ data: ReturnType<typeof normalizeAppeal> | null }} props */
 function ShowData({ data }) {
@@ -16,7 +17,7 @@ function ShowData({ data }) {
 }
 
 export default function AppealForm() {
-  const dossier = /** @type {import('../dossiers').DossierFixture} */ (useOutletContext());
+  const { dossier, sla } = /** @type {import('../dossiers').DossierOutletContext} */ (useOutletContext());
   const { values, errors, isValid, markAttempted } = useFormContext();
   const [validatedDraft, setValidatedDraft] = useState(/** @type {import('./validateAppeal').AppealDraft | null} */ (null));
   const needsEvidence = values.ground === 'NEW_EVIDENCE';
@@ -24,6 +25,7 @@ export default function AppealForm() {
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   function handleSubmit(event) {
     event.preventDefault();
+    if (sla.isExpiredNow()) return;
     markAttempted();
     if (!isValid) {
       const firstInvalidControl = event.currentTarget.elements.namedItem(Object.keys(errors)[0]);
@@ -39,6 +41,7 @@ export default function AppealForm() {
         <h1 id="appeal-title">{dossier.displayName} appeal</h1>
         <p className="sample-notice">Illustrative case study. This practice form validates the draft locally.</p>
       </header>
+      <AppealSlaStatus deadlineAt={dossier.deadlineAt} remainingMs={sla.remainingMs} expired={sla.expired} />
       <div className="appeal-layout">
         <form className="appeal-form" aria-label="Appeal draft" noValidate onSubmit={handleSubmit}>
           <InputField name="ground" label="Appeal ground" kind="select" options={appealGrounds} required />
@@ -48,7 +51,7 @@ export default function AppealForm() {
             hint={needsEvidence ? 'Required for New evidence. Use a complete HTTP or HTTPS URL.' : 'Optional. Use a complete HTTP or HTTPS URL.'}
           />
           <div className="appeal-actions">
-            <button type="submit" className="portal-action">Validate draft</button>
+            <button type="submit" className="portal-action" disabled={sla.expired}>Validate draft</button>
             <Link className="portal-text-link" to={`/dossier/${dossier.playerID}`}>Back to dossier</Link>
           </div>
           <p className="appeal-status" role="status">{isValid && validatedDraft === values ? 'Draft passed validation.' : ''}</p>

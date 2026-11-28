@@ -1,5 +1,6 @@
 // @ts-check
 import { Link, useOutletContext } from 'react-router';
+import AppealSlaStatus from './AppealSlaStatus.jsx';
 
 export function DossierNotFound() {
   return (
@@ -12,7 +13,7 @@ export function DossierNotFound() {
 }
 
 export default function DossierView() {
-  const dossier = /** @type {import('./dossiers').DossierFixture} */ (useOutletContext());
+  const { dossier, sla } = /** @type {import('./dossiers').DossierOutletContext} */ (useOutletContext());
 
   return (
     <article className="portal-panel" aria-labelledby="dossier-title">
@@ -29,6 +30,7 @@ export default function DossierView() {
         <h2>Case summary</h2>
         <p>{dossier.summary}</p>
       </section>
+      <AppealSlaStatus deadlineAt={dossier.deadlineAt} remainingMs={sla.remainingMs} expired={sla.expired} />
       <Link className="portal-action" to="appeal">Open appeal form</Link>
     </article>
   );

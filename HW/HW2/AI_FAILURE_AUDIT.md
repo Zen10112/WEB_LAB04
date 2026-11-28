@@ -34,3 +34,7 @@ Record observed AI-generated failures with the affected file, original output, s
 - **Engineering fix** — Give the heading `id="appeal-title"` and keep the association covered by the route test.
 - **Verification** — The route regression and full nine-test suite passed.
 - **Status** — Detected & Fixed
+
+## Appeal SLA countdown
+
+No new verified AI-generated failures were identified. The pre-implementation tests failed because the hook had yet to be added. All 14 frontend tests and the TypeScript/Vite build passed after implementation. A live Chrome check switched between two actual tabs and observed trusted `visibilitychange` events. The test controlled the clock and held interval callbacks to verify that returning to the appeal tab refreshed the countdown immediately and disabled submission after expiration.

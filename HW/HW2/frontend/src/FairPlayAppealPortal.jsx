@@ -4,6 +4,7 @@ import DossierView, { DossierNotFound } from './DossierView.jsx';
 import { dossiers } from './dossiers';
 import AppealForm from './form/AppealForm.jsx';
 import { FormProvider } from './form/FormContext';
+import useAppealSlaTimer from './useAppealSlaTimer.js';
 
 function PortalLayout() {
   const appealRoute = useMatch({ path: '/dossier/:playerID/appeal', caseSensitive: true });
@@ -27,16 +28,21 @@ function PortalLayout() {
   );
 }
 
-function DossierLayout() {
-  const { playerID } = useParams();
-  const dossier = dossiers.find((entry) => entry.playerID === playerID);
-  if (!dossier) return <DossierNotFound />;
+/** @param {{ dossier: import('./dossiers').DossierFixture }} props */
+function ActiveDossier({ dossier }) {
+  const sla = useAppealSlaTimer(dossier.deadlineAt);
 
   return (
     <FormProvider key={dossier.playerID}>
-      <Outlet context={dossier} />
+      <Outlet context={{ dossier, sla }} />
     </FormProvider>
   );
+}
+
+function DossierLayout() {
+  const { playerID } = useParams();
+  const dossier = dossiers.find((entry) => entry.playerID === playerID);
+  return dossier ? <ActiveDossier dossier={dossier} /> : <DossierNotFound />;
 }
 
 function DossierIndex() {

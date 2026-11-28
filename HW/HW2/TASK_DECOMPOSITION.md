@@ -29,7 +29,7 @@ Use React Router v7 route definitions and `Outlet` for the nested view. Direct l
 | `AppealForm` | Active dossier and the form context | Renders labeled controls and a JSON inspector for the current valid draft. Rejects invalid submissions and focuses the first invalid control. The current submit action validates the draft locally. |
 | `InputField` | Field name, label, input kind, and requirement | Uses `useId` to connect the label, hint, and visible error to the controlled field. |
 | `validateAppeal(draft)` | `AppealDraft` | Returns field errors synchronously as a pure function. Derive errors from current values without a validation effect. |
-| `useAppealSlaTimer()` | UTC deadline and a server time sample with its client receipt timestamp | Derives remaining milliseconds from the absolute deadline and clock delta. Recomputes on ticks, refreshes the time sample when the tab becomes visible, and cleans up timers, listeners, and pending refreshes. |
+| `useAppealSlaTimer(deadlineAt, clockSample?)` | Absolute deadline as a UTC ISO timestamp or epoch milliseconds and an optional `{ serverNow, clientReceivedAtMs }` sample | Returns `{ remainingMs, expired, isExpiredNow }`. Recomputes from `Date.now()` on ticks and when the tab becomes visible. Replaces old subscriptions when the deadline or offset changes. A future API caller can supply refreshed deadline and clock values. |
 
 ## Form and SLA contracts
 
@@ -61,6 +61,7 @@ type AppealReceipt = { id: string; playerID: PlayerID; submittedAt: string };
 - Keep draft values, touched fields, and submission status in the form context for the current player. Validate on change and again on submit. Display a field's error when it has been touched or submission was attempted. Connect errors to their controls with `aria-describedby` and surface invalid fields with `aria-invalid`.
 - Require a known ground and a trimmed statement of 20–2,000 characters. Require an absolute HTTP or HTTPS evidence URL for `NEW_EVIDENCE`. For other grounds, the URL is optional and must still be valid when supplied. The live inspector shows normalized fields and omits a blank optional URL. Future backend validation will use the same rules and take `playerID` from the route.
 - Encode `deadlineAt`, `serverNow`, and `submittedAt` as UTC ISO 8601 timestamps. Estimate current server time as `Date.now() + (serverNowMs - clientReceivedAtMs)`. Recalculate the difference from the deadline on each tick and clamp it at zero. Use the backend clock to enforce expiration at or after the deadline.
+- Calculate expiration at an exact zero or a missing or invalid deadline. The appeal form checks the same clock again on submit so a delayed callback cannot permit submission after the deadline.
 
 ## API contracts
 
