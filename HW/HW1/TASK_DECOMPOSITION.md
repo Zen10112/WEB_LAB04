@@ -10,7 +10,7 @@ For each assigned feature task, confirm its contract and acceptance criteria, wr
 
 | Unit | Inputs | Behavior |
 | --- | --- | --- |
-| `SwipeDeck` | Loaded profiles, active swipe history, and loading/error/pending status | Displays the first unreviewed card. Owns deck-level input and focus. Passes swipe and undo intents to the controller and prevents further mutations while one is pending. |
+| `SwipeDeck` | Ordered remaining profiles, derived score, loading/error/ready status, pending state, and optional intent callbacks | Displays the first card and previews the upcoming queue. Exposes swipe and undo intents through labeled buttons when callbacks are available. The UI preview supplies fixed fixtures without callbacks. Deck-level gestures and keyboard shortcuts belong to the swipe-events task. |
 | `ProfileCard` | `profile: Profile` | Renders the card content. It has no responsibility for input mapping or persistence. |
 | `SwipeControls` | `canSwipe`, `canUndo`, `onSwipe(direction)`, `onUndo()` | Exposes labeled buttons for the same swipe and undo intents as keyboard and pointer input. |
 | `DeckStats` | `score`, `reviewedCount`, `remainingCount` | Displays values derived from profiles and active history. |
@@ -25,6 +25,7 @@ type SwipeKind = 'PASS' | 'LIKE' | 'SKIP';
 type Profile = {
   id: string;
   name: string;
+  age: number;
   bio: string;
   imageUrl: string;
 };
