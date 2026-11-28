@@ -48,3 +48,9 @@ No new verified AI-generated failures were identified. The pre-implementation te
 - **Engineering fix** — Map Express's `URIError` with status 400 to a JSON `INVALID_PATH` response.
 - **Verification** — All five HTTP tests passed on local MongoDB, including the malformed URL regression.
 - **Status** — Detected & Fixed
+
+## Frontend API integration
+
+No new verified AI-generated failures were identified. The initial contract tests failed as expected while the frontend still used sample data. The final run passed 22 frontend tests, five live API tests, and the TypeScript/Vite build.
+
+Chrome DevTools Protocol used Chromium's Slow 3G settings. When navigation switched from TanVuu back to Himass, `Network.loadingFailed` marked the in-flight TanVuu GET as canceled with `net::ERR_ABORTED`. The live browser run also verified direct routes, 404, keyboard focus and activation, named and described form controls, invalid submission blocking, one stored receipt for two submit intents, server-driven expiration, reload, and the 320 px layout. The test used a controlled server clock for the SLA boundary and stored its appeal in `appeals_browser_test` within `lab04_hw2`.

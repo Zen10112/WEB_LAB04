@@ -1,23 +1,10 @@
 import type useAppealSlaTimer from './useAppealSlaTimer';
+import type { useAppealSubmission } from './form/useAppealSubmission';
 
-export const dossiers = [
-  {
-    playerID: 'himass',
-    displayName: 'Himass',
-    reference: 'LAB4-HIMASS',
-    topic: 'Review workflow',
-    deadlineAt: '2027-12-01T12:00:00.000Z',
-    summary: 'A classroom exercise in organizing a case summary and preparing a review timeline.',
-  },
-  {
-    playerID: 'tanvuu',
-    displayName: 'TanVuu',
-    reference: 'LAB4-TANVUU',
-    topic: 'Evidence intake',
-    deadlineAt: '2027-12-02T12:00:00.000Z',
-    summary: 'A classroom exercise in cataloging sample materials and preparing questions for review.',
-  },
-] as const;
-
-export type DossierFixture = (typeof dossiers)[number];
-export type DossierOutletContext = { dossier: DossierFixture; sla: ReturnType<typeof useAppealSlaTimer> };
+export type DossierSummary = { playerID: string; displayName: string };
+export type Dossier = DossierSummary & { reference: string; topic: string; summary: string; deadlineAt: string };
+export type DossierOutletContext = {
+  dossier: Dossier;
+  sla: ReturnType<typeof useAppealSlaTimer>;
+  submission: ReturnType<typeof useAppealSubmission>;
+};

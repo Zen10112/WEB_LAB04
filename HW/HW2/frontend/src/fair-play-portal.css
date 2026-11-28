@@ -102,8 +102,8 @@ a:focus-visible, button:focus-visible, .appeal-field :is(input, select, textarea
 }
 
 .dossier-link { color: #f3f7fc; text-decoration: none; }
-.dossier-link span:first-child { font-weight: 750; text-decoration: underline; text-underline-offset: .2em; }
-.dossier-link span:last-child, .dossier-details dt { color: var(--muted); font-size: .9rem; }
+.dossier-link strong { font-weight: 750; text-decoration: underline; text-underline-offset: .2em; }
+.dossier-details dt { color: var(--muted); font-size: .9rem; }
 .dossier-link:hover { border-color: var(--accent); }
 .dossier-details dd { margin: 0; font-weight: 650; }
 
@@ -154,7 +154,10 @@ article .portal-action { margin-top: 1.5rem; }
   margin-top: 1.75rem;
 }
 
-.appeal-form { display: grid; gap: 1rem; }
+.appeal-form, .appeal-fields { display: grid; gap: 1rem; }
+.appeal-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+.portal-request-error { margin-bottom: 1rem; }
+.portal-request-error p { color: #ffb5b5; }
 .appeal-field { display: grid; gap: .3rem; }
 .appeal-field label, .appeal-inspector figcaption { font-weight: 700; }
 
