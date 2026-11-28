@@ -11,8 +11,8 @@ Follow **Contract → Fail Test → Implement → Refactor**. Define observable 
 | Path | Screen and behavior |
 | --- | --- |
 | `/` | `DossierIndex` links to the Himass and TanVuu dossiers. |
-| `/dossier/:playerID` | `DossierLayout` resolves the route parameter and presents `DossierView` as the index content. Canonical player IDs are `himass` and `tanvuu`. |
-| `/dossier/:playerID/appeal` | The same `DossierLayout` provides the active dossier context to `AppealForm` through the nested route. The form shows a receipt after confirmed submission. |
+| `/dossier/:playerID` | `DossierView` reads `playerID` with `useParams` and resolves the sample dossier. Canonical player IDs are `himass` and `tanvuu`. |
+| `/dossier/:playerID/appeal` | Planned for the appeal form task. `DossierLayout` will provide the active dossier context to the nested form. |
 | `*` | `NotFound` offers a link back to the dossier index. An unknown `playerID` displays the same fallback. |
 
 Use React Router v7 route definitions and `Outlet` for the nested view. Direct links and browser Back/Forward should resolve the same dossier. When `playerID` changes, clear the previous draft and cancel stale reads so one player's response or input cannot appear in the other dossier.
@@ -21,9 +21,10 @@ Use React Router v7 route definitions and `Outlet` for the nested view. Direct l
 
 | Unit | Inputs | Behavior |
 | --- | --- | --- |
+| `FairPlayAppealPortal` | React Router v7 context | Renders the shared navigation with `NavLink` and the matched screen through `Outlet`. |
 | `DossierIndex` | Dossier summaries and read status | Renders navigation and a loading, error, or empty state as appropriate. |
-| `DossierLayout` | Validated `playerID` from the route | Provides the active `dossier`, authoritative server time reference, and player-scoped draft context to `Outlet`. |
-| `DossierView` | `dossier: Dossier` | Displays the active case summary, SLA state, and link to its appeal form. |
+| `DossierLayout` | Validated `playerID` from the route | Planned provider of the active `dossier`, server time reference, and player-scoped draft context. |
+| `DossierView` | `playerID` route parameter and local case study fixtures | Displays the matched illustrative dossier with semantic metadata or the 404 fallback. SLA and appeal links belong to later tasks. |
 | `AppealForm` | Active dossier context, draft, and a submission intent | Renders labeled fields and synchronous validation messages. Disables submission when invalid, expired, or pending. Displays a receipt once persistence is confirmed. |
 | `validateAppeal(draft)` | `AppealDraft` | Returns field errors synchronously as a pure function. Derive errors from current values without a validation effect. |
 | `useAppealSlaTimer()` | UTC deadline and a server time sample with its client receipt timestamp | Derives remaining milliseconds from the absolute deadline and clock delta. Recomputes on ticks, refreshes the time sample when the tab becomes visible, and cleans up timers, listeners, and pending refreshes. |
@@ -74,7 +75,7 @@ type AppealReceipt = { id: string; playerID: PlayerID; submittedAt: string };
 
 | Task | Scope | First acceptance check |
 | --- | --- | --- |
-| 1. Dossier routing | Implement the index, dynamic dossier route, nested appeal entry, and fallback. | A direct link to either dossier renders that player, Back/Forward resolves the correct dossier, and an unknown ID shows the fallback. |
+| 1. Dossier routing | Implement the shared layout, index, dynamic dossier route, and fallback. | A direct link to either dossier renders that player, Back/Forward resolves the correct dossier, and an unknown ID shows the fallback. |
 | 2. Appeal form | Add the context, controlled fields, and submission states. | A draft belongs to its route context. Moving to the other dossier starts with a clean draft. |
 | 3. Synchronous validation | Implement pure field rules, accessible errors, and submit gating. | Invalid input produces immediate field errors. Corrected input clears them and enables submission within the SLA. |
 | 4. SLA countdown | Implement `useAppealSlaTimer()` with an absolute deadline and visibility resync. | A delayed tick or hidden tab does not introduce drift. At zero, submission is disabled and unmount clears timers and listeners. |

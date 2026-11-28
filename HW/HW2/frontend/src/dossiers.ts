@@ -1,0 +1,16 @@
+export const dossiers = [
+  {
+    playerID: 'himass',
+    displayName: 'Himass',
+    reference: 'LAB4-HIMASS',
+    topic: 'Review workflow',
+    summary: 'A classroom exercise in organizing a case summary and preparing a review timeline.',
+  },
+  {
+    playerID: 'tanvuu',
+    displayName: 'TanVuu',
+    reference: 'LAB4-TANVUU',
+    topic: 'Evidence intake',
+    summary: 'A classroom exercise in cataloging sample materials and preparing questions for review.',
+  },
+] as const;

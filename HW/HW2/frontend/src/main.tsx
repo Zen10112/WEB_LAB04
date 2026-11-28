@@ -1,5 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
+import FairPlayAppealPortal from './FairPlayAppealPortal.jsx';
+import './fair-play-portal.css';
 
 const container = document.getElementById('root');
 
@@ -9,9 +12,8 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <main>
-      <h1>Esports Fair-Play Appeal Tribunal</h1>
-      <p>Himass &amp; TanVuu Case Study</p>
-    </main>
+    <BrowserRouter>
+      <FairPlayAppealPortal />
+    </BrowserRouter>
   </StrictMode>,
 );
