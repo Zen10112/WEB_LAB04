@@ -10,3 +10,17 @@ For each observed AI error, record the affected task, the evidence and reproduct
 - **Cause** — The test harness disabled the project's Vite config and skipped the React plugin that provides the automatic JSX transform. It also started a browser dependency scan that the short-lived SSR tests did not need.
 - **Correction** — Load the project's normal Vite config in the tests and disable dependency discovery for the test server.
 - **Verification** — The next `npm test` run passed all three tests. `npm run build` passed TypeScript checking and the Vite build.
+
+## Swipe events — Focus assertion diagnostics
+
+- **Evidence** — In the pre-implementation run of `node --test test/SwipeInput.test.mjs`, the focus test reported `[RangeError: Array buffer allocation failed]` after about 62 seconds instead of identifying the missing focus target.
+- **Cause** — A failed `assert.equal(document.activeElement, deck)` tried to format full jsdom nodes for the diagnostic.
+- **Correction** — Compare node identity as a boolean and provide a short explicit failure message. The expected initial absence of deck focus itself is a TDD failure.
+- **Verification** — The final `npm test` run passed all six tests, including deck focus and scoped keyboard input.
+
+## Swipe events — Chrome drag test input
+
+- **Evidence** — A local Chrome smoke test expected `Bảo Trân` after a drag ending outside the card and received `Minh Anh`. The event trace showed `setPointerCapture(1)` succeeded on pointer-down, then the outside pointer-up targeted `.deck-stage` instead of the card.
+- **Cause** — The Chrome DevTools smoke test sent `button: 'none'` on `mouseMoved` during a left-button drag. Chrome lost capture during that simulated sequence.
+- **Correction** — Keep `button: 'left'` on the move event for the smoke test and set `buttons` to `0` on release. The app's pointer handlers needed no change for this failure.
+- **Verification** — Chrome passed the 50 px boundary, outside-card drag, keyboard shortcuts, buttons, exhausted state, undo, and text-field Backspace checks.

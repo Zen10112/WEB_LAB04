@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import SwipeDeck from './SwipeDeck.jsx';
+import { SwipeDeckSession } from './SwipeDeck.jsx';
 import './swipe-deck.css';
 
 const profiles = [
@@ -35,6 +35,6 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <SwipeDeck profiles={profiles} score={0} />
+    <SwipeDeckSession profiles={profiles} />
   </StrictMode>,
 );

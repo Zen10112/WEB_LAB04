@@ -86,6 +86,8 @@ body {
   isolation: isolate;
   background: #593e44;
   color: #fff;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
 }
 
 .profile-card img {
@@ -149,9 +151,9 @@ body {
 .swipe-undo { border-style: dashed; }
 .swipe-button[aria-disabled="true"] { cursor: not-allowed; }
 .swipe-button:not([aria-disabled="true"]):hover { box-shadow: inset 0 0 0 1px currentColor; }
-.swipe-button:focus-visible { outline: 3px solid #672556; outline-offset: 3px; }
+.deck-stage:focus-visible, .swipe-button:focus-visible { outline: 3px solid #672556; outline-offset: 3px; }
 
-.preview-note, .queue-empty {
+.shortcut-hint, .queue-empty {
   margin: .75rem 0 0;
   color: var(--muted);
   font-size: .85rem;

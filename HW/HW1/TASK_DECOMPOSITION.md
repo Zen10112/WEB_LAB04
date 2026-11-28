@@ -10,11 +10,11 @@ For each assigned feature task, confirm its contract and acceptance criteria, wr
 
 | Unit | Inputs | Behavior |
 | --- | --- | --- |
-| `SwipeDeck` | Ordered remaining profiles, derived score, loading/error/ready status, pending state, and optional intent callbacks | Displays the first card and previews the upcoming queue. Exposes swipe and undo intents through labeled buttons when callbacks are available. The UI preview supplies fixed fixtures without callbacks. Deck-level gestures and keyboard shortcuts belong to the swipe-events task. |
-| `ProfileCard` | `profile: Profile` | Renders the card content. It has no responsibility for input mapping or persistence. |
+| `SwipeDeckSession` | Ordered sample profiles | Stores active swipe history and provides shared swipe and undo handlers. Passes remaining profiles to `SwipeDeck`. |
+| `SwipeDeck` | Ordered remaining profiles, score, loading/error/ready status, pending state, and optional intent callbacks | Displays the first card and previews the upcoming queue. The focusable deck maps keyboard shortcuts to the same callbacks as the controls and active card. |
+| `ProfileCard` | `profile: Profile`, `onSwipe(direction)` | Renders the active profile and maps horizontal pointer gestures to at most one swipe intent. |
 | `SwipeControls` | `canSwipe`, `canUndo`, `onSwipe(direction)`, `onUndo()` | Exposes labeled buttons for the same swipe and undo intents as keyboard and pointer input. |
 | `DeckStats` | `score`, `reviewedCount`, `remainingCount` | Displays values derived from profiles and active history. |
-| `useSwipeInput` | `enabled`, `onSwipe(direction)`, `onUndo()` | Supplies scoped keyboard and pointer handlers. Clears gesture tracking on cancellation and after completing a gesture. A single gesture emits at most one intent. |
 
 ## State contract
 
@@ -44,7 +44,7 @@ type DeckSnapshot = {
 
 - Store ordered profiles and the latest confirmed snapshot. Track loading, request errors, and any in-flight mutation separately. Keep the current pointer ID and gesture origin transient.
 - Derive the remaining queue by filtering reviewed profile IDs out of the ordered profiles. The queue head is the current card. Undo removes the last active swipe and restores that card to the head. The empty-history undo control is disabled.
-- Proposed HW1 defaults based on the swipe examples in the supplied slides are `ArrowLeft` → `PASS`, `ArrowRight` → `LIKE`, `ArrowUp` → `SKIP`, and `Backspace` → undo. Pointer swipes use the dominant axis and a 50 CSS pixel threshold. A gesture below the threshold or downward is ignored. Confirm these defaults at the start of the applicable feature task.
+- `ArrowLeft` sends `PASS`, `ArrowRight` sends `LIKE`, `ArrowUp` sends `SKIP`, and `Backspace` undoes the most recent swipe. Handle these keys only within the deck, skip editable fields and modified keys, and ignore auto-repeat. A primary pointer gesture starting on the current card sends left or right only when its horizontal displacement exceeds 50 CSS pixels. Cancelled, mismatched, and already-completed pointer events do not change the queue. An empty queue still supports undo when history exists.
 - Proposed scoring is `LIKE` +10, `PASS` and `SKIP` −5. Reduce the active history from zero on render. Undo changes the score through the same calculation. Reviewed and remaining counts are also derived.
 
 ## API contract
