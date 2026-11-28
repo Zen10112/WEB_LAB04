@@ -49,7 +49,7 @@ type DeckSnapshot = {
 
 ## API contract
 
-Proposed local JSON API for a single deck on MongoDB Community Server. The `/api/profiles` and `/api/swipe` paths follow the supplied persistence example. The history and undo paths are proposed here so the deck can recover after reload.
+Local JSON API for a single default deck on MongoDB Community Server. The history and undo routes allow the client to restore its state. The frontend integration is a separate task.
 
 | Method and path | Request | Success |
 | --- | --- | --- |
@@ -60,8 +60,8 @@ Proposed local JSON API for a single deck on MongoDB Community Server. The `/api
 
 - `operationId` is a client-generated UUID reused for retries of the same write. Replaying a successful mutation returns `200` with the current snapshot and makes no additional change. Reusing the ID with a different request returns `409`.
 - Apply accepted mutations with an atomic revision check against a single deck state so concurrent requests work on a standalone local server. Each accepted new mutation increments the revision. The client reloads history on conflict before accepting another intent.
-- Errors use `{ error: { code, message } }`. Return `400` for malformed input, `404` for an unknown profile or swipe ID, `409` for a stale revision or invalid deck transition, and `500` for unexpected storage failure. Keep internal errors and the database URI out of responses.
-- Read `MONGODB_URI` from `.env` and validate that it targets `mongodb://127.0.0.1:27017/lab04_hw1` before any database access. Use async/await with Mongoose 8. Seed by stable profile keys with upserts that preserve existing data. Keep automated test fixtures separate through an injected repository or mocked adapter.
+- Errors use `{ error: { code, message } }`. Return `400` for malformed input, `403` for a disallowed browser origin, `404` for unknown IDs, `409` for a stale revision or invalid deck transition, `413` for an oversized payload, `415` for an unsupported encoding, and `500` for unexpected failure. Keep internal errors and the database URI out of responses.
+- Read `MONGODB_URI` from `.env` and validate that it targets `mongodb://127.0.0.1:27017/lab04_hw1` before any database access. Use async/await with Mongoose 8. Seed by stable profile keys with upserts that preserve existing data. Live API tests use a separately identified deck in the same database.
 
 ## Task sequence and planned acceptance tests
 

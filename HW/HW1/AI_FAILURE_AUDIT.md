@@ -28,3 +28,7 @@ For each observed AI error, record the affected task, the evidence and reproduct
 ## LIFO undo and derived score
 
 No new AI implementation errors were observed. Both new tests failed before implementation because the displayed score was fixed at zero. After deriving the score from history, all eight frontend tests and the build passed.
+
+## MongoDB persistence
+
+No new AI implementation errors were observed. The initial contract test failed because the API module had yet to be implemented. On local `lab04_hw1`, the first seed inserted three profiles and the second inserted zero. The final run passed all three live API tests and the server startup check.
