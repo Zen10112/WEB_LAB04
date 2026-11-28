@@ -31,6 +31,39 @@ after(async () => {
 
 const profiles = ['Mai', 'Vy', 'An'].map((name) => ({ id: name, name, age: 24, bio: 'Hồ sơ mẫu.', imageUrl: '/profile.webp' }));
 
+function mockDeckApi(t, { initial = { revision: 0, history: [] }, onRead, onMutation } = {}) {
+  let snapshot = initial;
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  globalThis.fetch = async (url, { body, method = 'GET', signal }) => {
+    const { pathname } = new URL(url);
+    const request = { pathname, method, body: body && JSON.parse(body), signal };
+    calls.push(request);
+    if (method === 'GET') {
+      const data = pathname === '/api/profiles' ? profiles : snapshot;
+      return onRead ? onRead(request, data) : Response.json(data);
+    }
+
+    const commit = (changes = {}) => {
+      const { expectedRevision, operationId, profileId, kind } = { ...request.body, ...changes };
+      assert.equal(expectedRevision, snapshot.revision);
+      assert.match(operationId, /^[0-9a-f-]{36}$/);
+      if (pathname === '/api/swipe') {
+        snapshot = { revision: snapshot.revision + 1, history: [...snapshot.history, { id: operationId, profileId, kind }] };
+      } else {
+        assert.equal(pathname, `/api/swipe/${snapshot.history.at(-1).id}/undo`);
+        snapshot = { revision: snapshot.revision + 1, history: snapshot.history.slice(0, -1) };
+      }
+      return Response.json(snapshot, { status: pathname === '/api/swipe' ? 201 : 200 });
+    };
+    return onMutation ? onMutation(request, commit, snapshot) : commit();
+  };
+
+  return calls;
+}
+
 async function mount(t, Component, props) {
   document.body.innerHTML = '<input aria-label="Outside editor"><div id="root"></div>';
   const root = createRoot(document.getElementById('root'));
@@ -117,6 +150,7 @@ test('pointer gestures need a matching primary pointer and more than 50 horizont
 });
 
 test('keyboard, pointer and buttons advance the same queue and undo restores cards in order', async (t) => {
+  mockDeckApi(t);
   const deck = await mount(t, deckModule.SwipeDeckSession);
   const current = () => document.querySelector('.profile-card h3')?.firstChild.textContent.trim();
   const undo = document.querySelector('.swipe-undo');
@@ -154,6 +188,7 @@ test('keyboard, pointer and buttons advance the same queue and undo restores car
 });
 
 test('score and queue follow the active stack through LIFO undo and a replacement swipe', async (t) => {
+  mockDeckApi(t);
   const deck = await mount(t, deckModule.SwipeDeckSession);
   const assertDeck = (card, score, count) => {
     const title = deck.querySelector('.profile-card h3');
@@ -184,6 +219,7 @@ test('score and queue follow the active stack through LIFO undo and a replacemen
 });
 
 test('multiple intents for the same rendered profile count as one history entry', async (t) => {
+  const calls = mockDeckApi(t);
   const deck = await mount(t, deckModule.SwipeDeckSession);
   await act(() => {
     deck.querySelector('.swipe-right').click();
@@ -192,10 +228,111 @@ test('multiple intents for the same rendered profile count as one history entry'
 
   const score = document.querySelector('.deck-stats dd');
   assert.equal(score.textContent, '10');
+  assert.equal(calls.filter(({ method }) => method === 'POST').length, 1);
   assert.match(deck.querySelector('.profile-card h3').textContent, /^Vy\b/);
 
   await press(deck, 'Backspace');
   assert.equal(score.textContent, '0');
   assert.match(deck.querySelector('.profile-card h3').textContent, /^Mai\b/);
   assert.equal(deck.querySelector('.swipe-undo').getAttribute('aria-disabled'), 'true');
+});
+
+test('a fresh mount restores the server history, card and score', async (t) => {
+  const calls = mockDeckApi(t, { initial: { revision: 5, history: [{ id: 'stored', profileId: 'Mai', kind: 'LIKE' }] } });
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  assert.deepEqual(calls.map(({ pathname }) => pathname).sort(), ['/api/profiles', '/api/swipes']);
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Vy\b/);
+  assert.equal(document.querySelector('.deck-stats dd').textContent, '10');
+  await press(deck, 'Backspace');
+  assert.equal(calls.at(-1).pathname, '/api/swipe/stored/undo');
+  assert.equal(calls.at(-1).body.expectedRevision, 5);
+});
+
+test('a failed initial read can be retried after the API returns', async (t) => {
+  let failed = false;
+  mockDeckApi(t, {
+    onRead({ pathname }, data) {
+      if (!failed && pathname === '/api/profiles') {
+        failed = true;
+        throw new TypeError('Failed to fetch');
+      }
+      return Response.json(data);
+    },
+  });
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  assert.match(deck.querySelector('[role="alert"]').textContent, /Không tải được hồ sơ/);
+  assert.equal(deck.querySelector('.profile-card'), null);
+  const retry = deck.querySelector('.deck-retry');
+  retry.focus();
+  await act(() => { retry.click(); });
+  assert.equal(deck.querySelector('[role="alert"]'), null);
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Mai\b/);
+  assert.ok(document.activeElement === deck, 'Retry returns keyboard focus to the deck');
+});
+
+test('a lost write response keeps the confirmed deck and retries with the same operation ID', async (t) => {
+  let firstPayload;
+  let resolveWrite;
+  const calls = mockDeckApi(t, {
+    async onMutation(request, commit, snapshot) {
+      if (!firstPayload) {
+        firstPayload = request.body;
+        await new Promise((resolve) => { resolveWrite = resolve; });
+        commit();
+        throw new TypeError('Connection lost after commit');
+      }
+      assert.deepEqual(request.body, firstPayload);
+      return Response.json(snapshot);
+    },
+  });
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  await press(deck, 'ArrowRight');
+  await press(deck, 'ArrowLeft');
+  assert.equal(calls.filter(({ method }) => method === 'POST').length, 1);
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Mai\b/);
+  await act(() => { resolveWrite(); });
+  assert.ok(deck.querySelector('[role="alert"]'));
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Mai\b/);
+  assert.equal(document.querySelector('.deck-stats dd').textContent, '0');
+  await press(deck, 'ArrowUp');
+  assert.equal(calls.filter(({ method }) => method === 'POST').length, 1);
+
+  await act(() => { deck.querySelector('.deck-retry').click(); });
+  assert.equal(calls.filter(({ method }) => method === 'POST').length, 2);
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Vy\b/);
+  assert.equal(document.querySelector('.deck-stats dd').textContent, '10');
+});
+
+test('a revision conflict refreshes the server snapshot without repeating the rejected intent', async (t) => {
+  const calls = mockDeckApi(t, {
+    onMutation(_request, commit) {
+      commit({ kind: 'LIKE' }); // A competing client sent a different action at the old revision.
+      return Response.json({ error: { code: 'STALE_REVISION' } }, { status: 409 });
+    },
+  });
+  const deck = await mount(t, deckModule.SwipeDeckSession);
+  await press(deck, 'ArrowUp');
+  assert.equal(calls.filter(({ method }) => method === 'POST').length, 1);
+  assert.equal(calls.filter(({ pathname }) => pathname === '/api/swipes').length, 2);
+  assert.match(deck.querySelector('.profile-card h3').textContent, /^Vy\b/);
+  assert.equal(document.querySelector('.deck-stats dd').textContent, '10');
+  assert.equal(deck.querySelector('.swipe-right').getAttribute('aria-disabled'), 'false');
+});
+
+test('unmount aborts both initial reads and ignores a late response', async (t) => {
+  const originalFetch = globalThis.fetch;
+  t.after(() => { globalThis.fetch = originalFetch; });
+  const inFlight = [];
+  globalThis.fetch = (_url, { signal }) => new Promise((resolve) => inFlight.push({ signal, resolve }));
+  const mounted = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(mounted);
+  try {
+    await act(() => root.render(createElement(deckModule.SwipeDeckSession)));
+    assert.equal(inFlight.length, 2);
+  } finally {
+    await act(() => root.unmount());
+  }
+  assert.ok(inFlight.every(({ signal }) => signal.aborted));
+  await act(() => { inFlight.forEach(({ resolve }) => resolve(Response.json({}))); });
+  assert.equal(mounted.textContent, '');
 });

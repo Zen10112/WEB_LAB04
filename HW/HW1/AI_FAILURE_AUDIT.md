@@ -32,3 +32,16 @@ No new AI implementation errors were observed. Both new tests failed before impl
 ## MongoDB persistence
 
 No new AI implementation errors were observed. The initial contract test failed because the API module had yet to be implemented. On local `lab04_hw1`, the first seed inserted three profiles and the second inserted zero. The final run passed all three live API tests and the server startup check.
+
+## Frontend integration — Vite browser test configuration
+
+- **Evidence** — Chrome loaded an empty page during the integration smoke test. Its console reported that `react-dom/client.js` did not provide an export named `createRoot`.
+- **Cause** — The browser test launcher reused `optimizeDeps.noDiscovery: true` from the SSR test setup, leaving the CommonJS React DOM entry unoptimized for the browser.
+- **Correction** — Start the browser test with the normal Vite development configuration.
+- **Verification** — Chrome loaded the profiles from Express and completed the live swipe, reload, and undo sequence.
+
+## Frontend integration — Keyboard focus after retry
+
+- **Evidence** — With the initial integration in place, `node --test --test-name-pattern 'failed initial read' test/SwipeInput.test.mjs` failed at `Retry returns keyboard focus to the deck`. The retry succeeded, then removing the focused button left focus outside the deck.
+- **Correction** — Move focus to the deck when Retry is activated, before its button is removed during the request.
+- **Verification** — All 13 frontend tests passed. The first Chrome run with a raw Enter event did not activate the native button. A subsequent run with Space activated Retry, returned visible keyboard focus to the deck, and allowed a persisted undo with Backspace.

@@ -10,7 +10,8 @@ For each assigned feature task, confirm its contract and acceptance criteria, wr
 
 | Unit | Inputs | Behavior |
 | --- | --- | --- |
-| `SwipeDeckSession` | Ordered sample profiles | Stores an active stack of `{ profileId, kind }` records and provides shared swipe and undo handlers. Derives the remaining profiles and score from that stack for `SwipeDeck`. |
+| `SwipeDeckSession` | `useSwipeDeck()` result | Derives the remaining profiles and score from the confirmed API history. Sends shared input intents to the hook. |
+| `useSwipeDeck` | Express API origin | Loads profiles and history, submits one mutation at a time, and exposes loading, error, and retry state. On a revision conflict, refreshes the deck before accepting another action. |
 | `SwipeDeck` | Ordered remaining profiles, score, loading/error/ready status, pending state, and optional intent callbacks | Displays the first card and previews the upcoming queue. The focusable deck maps keyboard shortcuts to the same callbacks as the controls and active card. |
 | `ProfileCard` | `profile: Profile`, `onSwipe(direction)` | Renders the active profile and maps horizontal pointer gestures to at most one swipe intent. |
 | `SwipeControls` | `canSwipe`, `canUndo`, `onSwipe(direction)`, `onUndo()` | Exposes labeled buttons for the same swipe and undo intents as keyboard and pointer input. |
@@ -46,10 +47,11 @@ type DeckSnapshot = {
 - Derive the remaining queue by filtering reviewed profile IDs out of the ordered profiles. The queue head is the current card. Undo removes the last active swipe and restores that card to the head. The empty-history undo control is disabled.
 - `ArrowLeft` sends `PASS`, `ArrowRight` sends `LIKE`, `ArrowUp` sends `SKIP`, and `Backspace` undoes the most recent swipe. Handle these keys only within the deck, skip editable fields and modified keys, and ignore auto-repeat. A primary pointer gesture starting on the current card sends left or right only when its horizontal displacement exceeds 50 CSS pixels. Cancelled, mismatched, and already-completed pointer events do not change the queue. An empty queue still supports undo when history exists.
 - Scoring is `LIKE` +10 and every other swipe −5. Reduce the active history from zero on render. Undo pops the last record and updates both the queue and score through their existing derivations. Undo with an empty stack leaves both unchanged.
+- Apply only confirmed API snapshots. If the response to a write is lost, keep the last confirmed deck and retry the exact mutation with the same `operationId` before accepting a new intent. Abort in-flight work when the deck unmounts.
 
 ## API contract
 
-Local JSON API for a single default deck on MongoDB Community Server. The history and undo routes allow the client to restore its state. The frontend integration is a separate task.
+Local JSON API for a single default deck on MongoDB Community Server. The frontend loads profiles and active history on mount and restores the current deck after a reload.
 
 | Method and path | Request | Success |
 | --- | --- | --- |

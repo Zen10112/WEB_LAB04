@@ -1,10 +1,10 @@
 // @ts-check
-import { useId, useRef, useState } from 'react';
+import { useId, useRef } from 'react';
+import { useSwipeDeck } from './useSwipeDeck';
 
-/** @typedef {{ id: string, name: string, age: number, bio: string, imageUrl: string }} Profile */
+/** @typedef {import('./useSwipeDeck').Profile} Profile */
 /** @typedef {'left' | 'right' | 'up'} SwipeDirection */
-/** @typedef {'PASS' | 'LIKE' | 'SKIP'} SwipeKind */
-/** @typedef {{ profileId: string, kind: SwipeKind }} SwipeRecord */
+/** @typedef {import('./useSwipeDeck').SwipeKind} SwipeKind */
 
 const swipeThreshold = 50;
 
@@ -118,11 +118,12 @@ const keyboardDirections = new Map([
 
 /**
  * @param {{ profiles: Profile[], score: number, status?: 'ready' | 'loading' | 'error', pending?: boolean,
- * onSwipe?: (direction: SwipeDirection) => void, onUndo?: () => void }} props
+ * onSwipe?: (direction: SwipeDirection) => void, onUndo?: () => void, error?: string, onRetry?: () => void }} props
  */
-export default function SwipeDeck({ profiles, score, status = 'ready', pending = false, onSwipe, onUndo }) {
+export default function SwipeDeck({ profiles, score, status = 'ready', pending = false, onSwipe, onUndo, error, onRetry }) {
   const headingId = useId();
   const shortcutHintId = useId();
+  const stage = useRef(/** @type {HTMLElement | null} */ (null));
   const ready = status === 'ready';
   const [current, ...upcoming] = ready ? profiles : [];
   const swipe = ready && current && !pending ? onSwipe : undefined;
@@ -153,6 +154,7 @@ export default function SwipeDeck({ profiles, score, status = 'ready', pending =
 
       <div className="deck-layout">
         <section
+          ref={stage}
           className="deck-panel deck-stage"
           aria-labelledby={headingId}
           aria-describedby={showShortcuts ? shortcutHintId : undefined}
@@ -162,9 +164,17 @@ export default function SwipeDeck({ profiles, score, status = 'ready', pending =
           <h2 id={headingId}>Hồ sơ hiện tại</h2>
           {current && <ProfileCard key={current.id} profile={current} onSwipe={swipe} />}
           {status === 'loading' && <p className="deck-message" role="status">Đang tải hồ sơ…</p>}
-          {status === 'error' && <p className="deck-message" role="alert">Không tải được hồ sơ.</p>}
+          {status === 'error' && <p className="deck-message" role="alert">{error ?? 'Không tải được hồ sơ.'}</p>}
           {ready && !current && <p className="deck-message">Bạn đã xem hết hồ sơ.</p>}
           <SwipeControls onSwipe={swipe} onUndo={undo} />
+          {ready && pending && <p className="shortcut-hint" role="status">Đang lưu hoặc đồng bộ bộ thẻ…</p>}
+          {ready && error && <p className="deck-error" role="alert">{error}</p>}
+          {onRetry && (
+            <button className="swipe-button deck-retry" type="button" onClick={() => {
+              stage.current?.focus();
+              onRetry();
+            }}>Thử lại</button>
+          )}
           {showShortcuts && <p className="shortcut-hint" id={shortcutHintId}>Phím ←, →, ↑ để vuốt thẻ. Backspace để hoàn tác.</p>}
         </section>
         <div className="deck-sidebar">
@@ -179,29 +189,25 @@ export default function SwipeDeck({ profiles, score, status = 'ready', pending =
 /** @type {Readonly<Record<SwipeDirection, SwipeKind>>} */
 const swipeKinds = { left: 'PASS', right: 'LIKE', up: 'SKIP' };
 
-/** @param {{ profiles: Profile[] }} props */
-export function SwipeDeckSession({ profiles }) {
-  const [history, setHistory] = useState(/** @type {SwipeRecord[]} */ ([]));
+export function SwipeDeckSession() {
+  const { data, pending, error, swipe, undo, retry } = useSwipeDeck();
+  const history = data?.snapshot.history ?? [];
   const score = history.reduce((total, { kind }) => total + (kind === 'LIKE' ? 10 : -5), 0);
   const reviewed = new Set(history.map(({ profileId }) => profileId));
-  const remaining = profiles.filter(({ id }) => !reviewed.has(id));
-  const currentId = remaining[0]?.id;
-
-  /** @param {SwipeDirection} direction */
-  function handleSwipe(direction) {
-    if (currentId === undefined) return;
-
-    setHistory((previous) => {
-      if (previous.some(({ profileId }) => profileId === currentId)) return previous;
-      return [...previous, { profileId: currentId, kind: swipeKinds[direction] }];
-    });
-  }
-
-  function handleUndo() {
-    setHistory((previous) => previous.length ? previous.slice(0, -1) : previous);
-  }
+  const remaining = data?.profiles.filter(({ id }) => !reviewed.has(id)) ?? [];
+  const current = remaining[0];
+  const status = data ? 'ready' : pending ? 'loading' : 'error';
 
   return (
-    <SwipeDeck profiles={remaining} score={score} onSwipe={handleSwipe} onUndo={history.length ? handleUndo : undefined} />
+    <SwipeDeck
+      profiles={remaining}
+      score={score}
+      status={status}
+      pending={pending}
+      error={error}
+      onRetry={retry}
+      onSwipe={swipe && current ? (direction) => swipe(current.id, swipeKinds[direction]) : undefined}
+      onUndo={undo}
+    />
   );
 }
