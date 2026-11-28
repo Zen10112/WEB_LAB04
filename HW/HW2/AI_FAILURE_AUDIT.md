@@ -38,3 +38,13 @@ Record observed AI-generated failures with the affected file, original output, s
 ## Appeal SLA countdown
 
 No new verified AI-generated failures were identified. The pre-implementation tests failed because the hook had yet to be added. All 14 frontend tests and the TypeScript/Vite build passed after implementation. A live Chrome check switched between two actual tabs and observed trusted `visibilitychange` events. The test controlled the clock and held interval callbacks to verify that returning to the appeal tab refreshed the countdown immediately and disabled submission after expiration.
+
+## HW2-04 — An invalid route encoding returned HTTP 500
+
+- **Category** — Express request validation
+- **Affected file** — [backend/src/app.js](backend/src/app.js)
+- **Evidence** — After implementation, `npm test -- --test-name-pattern 'reads the seeded dossiers'` requested `/api/dossiers/%ZZ`. Express logged `URIError: Failed to decode param '%ZZ'` with `status: 400`, but the API sent `500` and the test reported `500 !== 400`.
+- **Root cause** — The custom error handler recognized domain and JSON parser errors, then treated Express's route-decoding error as an unexpected failure.
+- **Engineering fix** — Map Express's `URIError` with status 400 to a JSON `INVALID_PATH` response.
+- **Verification** — All five HTTP tests passed on local MongoDB, including the malformed URL regression.
+- **Status** — Detected & Fixed

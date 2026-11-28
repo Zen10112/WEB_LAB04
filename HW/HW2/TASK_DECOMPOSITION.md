@@ -33,14 +33,14 @@ Use React Router v7 route definitions and `Outlet` for the nested view. Direct l
 
 ## Form and SLA contracts
 
-The form uses the grounds and validation limits below. The API receipt shape remains a proposal for the persistence task.
+The form and API use the grounds, validation limits, and receipt shape below.
 
 ```ts
 type PlayerID = 'himass' | 'tanvuu';
 type AppealGround = 'PROCEDURAL_ERROR' | 'DISPROPORTIONATE_SANCTION' | 'NEW_EVIDENCE';
 
 type DossierSummary = { playerID: PlayerID; displayName: string };
-type Dossier = DossierSummary & { summary: string; deadlineAt: string };
+type Dossier = DossierSummary & { reference: string; topic: string; summary: string; deadlineAt: string };
 
 type AppealDraft = {
   ground: string;
@@ -59,7 +59,7 @@ type AppealReceipt = { id: string; playerID: PlayerID; submittedAt: string };
 ```
 
 - Keep draft values, touched fields, and submission status in the form context for the current player. Validate on change and again on submit. Display a field's error when it has been touched or submission was attempted. Connect errors to their controls with `aria-describedby` and surface invalid fields with `aria-invalid`.
-- Require a known ground and a trimmed statement of 20–2,000 characters. Require an absolute HTTP or HTTPS evidence URL for `NEW_EVIDENCE`. For other grounds, the URL is optional and must still be valid when supplied. The live inspector shows normalized fields and omits a blank optional URL. Future backend validation will use the same rules and take `playerID` from the route.
+- Require a known ground and a trimmed statement of 20–2,000 characters. Require an absolute HTTP or HTTPS evidence URL for `NEW_EVIDENCE`. For other grounds, the URL is optional and must still be valid when supplied. The live inspector shows normalized fields and omits a blank optional URL. The backend validates these rules independently and takes `playerID` from the route.
 - Encode `deadlineAt`, `serverNow`, and `submittedAt` as UTC ISO 8601 timestamps. Estimate current server time as `Date.now() + (serverNowMs - clientReceivedAtMs)`. Recalculate the difference from the deadline on each tick and clamp it at zero. Use the backend clock to enforce expiration at or after the deadline.
 - Calculate expiration at an exact zero or a missing or invalid deadline. The appeal form checks the same clock again on submit so a delayed callback cannot permit submission after the deadline.
 
@@ -68,10 +68,10 @@ type AppealReceipt = { id: string; playerID: PlayerID; submittedAt: string };
 | Method and path | Input | Success |
 | --- | --- | --- |
 | `GET /api/dossiers` | No body | `200` with `{ dossiers: DossierSummary[] }` in stable order. |
-| `GET /api/dossiers/:playerID` | Known `playerID` | `200` with `{ dossier: Dossier, serverNow: string }`. Reload this endpoint to refresh the SLA clock reference. |
+| `GET /api/dossiers/:playerID` | Known `playerID` | `200` with `{ dossier: Dossier, serverNow: string }`. The response includes `dossier.deadlineAt` and uses `Cache-Control: no-store` so the client can refresh its SLA clock reference. |
 | `POST /api/dossiers/:playerID/appeals` | Known `playerID` and JSON `AppealSubmission` | `201` with the persisted `AppealReceipt`. An exact retry with the same `operationId` returns `200` with the existing receipt. |
 
-- Errors use `{ error: { code, message, fields? } }`. Return `400` for invalid input, `404` for an unknown player, `409` for an expired deadline or an operation ID reused with a different payload, and `500` for an unexpected server error. Check existing accepted operations before enforcing the deadline on retries.
+- Errors use `{ error: { code, message, fields? } }`. Return `400` for invalid input, `403` for a disallowed browser origin, `404` for an unknown player, `409` for an expired deadline or an operation ID reused with a different payload, `413` for oversized JSON, `415` for unsupported JSON encoding, and `500` for an unexpected server error. Check existing accepted operations before enforcing the deadline on retries.
 - Persist dossiers keyed by `playerID` and appeals keyed uniquely by `{ playerID, operationId }`. Read `MONGODB_URI` from `.env` and verify it targets `mongodb://127.0.0.1:27017/lab04_hw2` before connecting. Seed missing case fixtures with stable keys and upserts that preserve existing records. Restrict CORS to the configured frontend origin.
 
 ## Task sequence and acceptance tests
