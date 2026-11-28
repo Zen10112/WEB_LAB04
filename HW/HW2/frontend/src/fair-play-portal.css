@@ -55,7 +55,7 @@ body { margin: 0; min-width: 0; }
   text-underline-offset: .25em;
 }
 
-a:focus-visible {
+a:focus-visible, button:focus-visible, .appeal-field :is(input, select, textarea):focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
@@ -112,6 +112,68 @@ a:focus-visible {
 .dossier-summary p { margin: .4rem 0 0; color: var(--muted); }
 .portal-text-link { color: var(--accent); text-underline-offset: .2em; }
 
+.portal-action {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: .45rem .9rem;
+  border: 1px solid var(--accent);
+  border-radius: .5rem;
+  background: var(--accent);
+  color: #10262b;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dossier-summary + .portal-action { margin-top: 1.5rem; }
+.portal-action:hover { background: #b4f6eb; }
+
+.appeal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+}
+
+.appeal-form { display: grid; gap: 1rem; }
+.appeal-field { display: grid; gap: .3rem; }
+.appeal-field label, .appeal-inspector figcaption { font-weight: 700; }
+
+.appeal-field :is(input, select, textarea) {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .55rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: .45rem;
+  background: #111e2a;
+  color: inherit;
+  font: inherit;
+}
+
+.appeal-field textarea { resize: vertical; }
+.appeal-field [aria-invalid="true"] { border-color: #ffb5b5; }
+.appeal-hint, .appeal-error, .appeal-inspector p { margin: 0; font-size: .9rem; }
+.appeal-hint, .appeal-inspector p { color: var(--muted); }
+.appeal-error { color: #ffb5b5; }
+.appeal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+.appeal-status { margin: 0; color: var(--accent); }
+
+.appeal-inspector {
+  min-width: 0;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: #111e2a;
+}
+
+.appeal-inspector figcaption { margin-bottom: .6rem; }
+.appeal-inspector pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 @media (max-width: 38rem) {
-  .dossier-index, .dossier-details { grid-template-columns: minmax(0, 1fr); }
+  .dossier-index, .dossier-details, .appeal-layout { grid-template-columns: minmax(0, 1fr); }
 }

@@ -11,8 +11,8 @@ Follow **Contract → Fail Test → Implement → Refactor**. Define observable 
 | Path | Screen and behavior |
 | --- | --- |
 | `/` | `DossierIndex` links to the Himass and TanVuu dossiers. |
-| `/dossier/:playerID` | `DossierView` reads `playerID` with `useParams` and resolves the sample dossier. Canonical player IDs are `himass` and `tanvuu`. |
-| `/dossier/:playerID/appeal` | Planned for the appeal form task. `DossierLayout` will provide the active dossier context to the nested form. |
+| `/dossier/:playerID` | `DossierLayout` reads `playerID` with `useParams` and resolves the sample dossier for `DossierView`. Canonical player IDs are `himass` and `tanvuu`. |
+| `/dossier/:playerID/appeal` | The same layout supplies the active dossier and its player-scoped form context to the nested `AppealForm`. |
 | `*` | `NotFound` offers a link back to the dossier index. An unknown `playerID` displays the same fallback. |
 
 Use React Router v7 route definitions and `Outlet` for the nested view. Direct links and browser Back/Forward should resolve the same dossier. When `playerID` changes, clear the previous draft and cancel stale reads so one player's response or input cannot appear in the other dossier.
@@ -23,15 +23,17 @@ Use React Router v7 route definitions and `Outlet` for the nested view. Direct l
 | --- | --- | --- |
 | `FairPlayAppealPortal` | React Router v7 context | Renders the shared navigation with `NavLink` and the matched screen through `Outlet`. |
 | `DossierIndex` | Dossier summaries and read status | Renders navigation and a loading, error, or empty state as appropriate. |
-| `DossierLayout` | Validated `playerID` from the route | Planned provider of the active `dossier`, server time reference, and player-scoped draft context. |
-| `DossierView` | `playerID` route parameter and local case study fixtures | Displays the matched illustrative dossier with semantic metadata or the 404 fallback. SLA and appeal links belong to later tasks. |
-| `AppealForm` | Active dossier context, draft, and a submission intent | Renders labeled fields and synchronous validation messages. Disables submission when invalid, expired, or pending. Displays a receipt once persistence is confirmed. |
+| `DossierLayout` | `playerID` route parameter and local case study fixtures | Supplies the active case through `Outlet` and resets the draft provider when the player changes. Invalid IDs render the 404 fallback. |
+| `DossierView` | Active dossier context | Displays illustrative case metadata and links to the nested appeal form. |
+| `FormProvider` | Player-scoped route and its children | Holds draft values, touched flags, and submit-attempt state. Derives `errors` and `isValid` synchronously during render. |
+| `AppealForm` | Active dossier and the form context | Renders labeled controls and a JSON inspector for the current valid draft. Rejects invalid submissions and focuses the first invalid control. The current submit action validates the draft locally. |
+| `InputField` | Field name, label, input kind, and requirement | Uses `useId` to connect the label, hint, and visible error to the controlled field. |
 | `validateAppeal(draft)` | `AppealDraft` | Returns field errors synchronously as a pure function. Derive errors from current values without a validation effect. |
 | `useAppealSlaTimer()` | UTC deadline and a server time sample with its client receipt timestamp | Derives remaining milliseconds from the absolute deadline and clock delta. Recomputes on ticks, refreshes the time sample when the tab becomes visible, and cleans up timers, listeners, and pending refreshes. |
 
 ## Form and SLA contracts
 
-The grounds, limits, and receipt shape below are proposals for the implementation task.
+The form uses the grounds and validation limits below. The API receipt shape remains a proposal for the persistence task.
 
 ```ts
 type PlayerID = 'himass' | 'tanvuu';
@@ -41,7 +43,7 @@ type DossierSummary = { playerID: PlayerID; displayName: string };
 type Dossier = DossierSummary & { summary: string; deadlineAt: string };
 
 type AppealDraft = {
-  ground: AppealGround | '';
+  ground: string;
   statement: string;
   evidenceUrl: string;
 };
@@ -57,7 +59,7 @@ type AppealReceipt = { id: string; playerID: PlayerID; submittedAt: string };
 ```
 
 - Keep draft values, touched fields, and submission status in the form context for the current player. Validate on change and again on submit. Display a field's error when it has been touched or submission was attempted. Connect errors to their controls with `aria-describedby` and surface invalid fields with `aria-invalid`.
-- Require a known ground and a trimmed statement of 20–2,000 characters. The optional evidence URL must be an absolute HTTP or HTTPS URL when present. Send normalized fields and omit a blank evidence URL. Validate the same rules on the backend and take `playerID` from the route.
+- Require a known ground and a trimmed statement of 20–2,000 characters. Require an absolute HTTP or HTTPS evidence URL for `NEW_EVIDENCE`. For other grounds, the URL is optional and must still be valid when supplied. The live inspector shows normalized fields and omits a blank optional URL. Future backend validation will use the same rules and take `playerID` from the route.
 - Encode `deadlineAt`, `serverNow`, and `submittedAt` as UTC ISO 8601 timestamps. Estimate current server time as `Date.now() + (serverNowMs - clientReceivedAtMs)`. Recalculate the difference from the deadline on each tick and clamp it at zero. Use the backend clock to enforce expiration at or after the deadline.
 
 ## API contracts

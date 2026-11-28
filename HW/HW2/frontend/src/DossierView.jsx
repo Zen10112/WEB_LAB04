@@ -1,6 +1,5 @@
 // @ts-check
-import { Link, useParams } from 'react-router';
-import { dossiers } from './dossiers';
+import { Link, useOutletContext } from 'react-router';
 
 export function DossierNotFound() {
   return (
@@ -13,10 +12,7 @@ export function DossierNotFound() {
 }
 
 export default function DossierView() {
-  const { playerID } = useParams();
-  const dossier = dossiers.find((entry) => entry.playerID === playerID);
-
-  if (!dossier) return <DossierNotFound />;
+  const dossier = /** @type {import('./dossiers').DossierFixture} */ (useOutletContext());
 
   return (
     <article className="portal-panel" aria-labelledby="dossier-title">
@@ -33,6 +29,7 @@ export default function DossierView() {
         <h2>Case summary</h2>
         <p>{dossier.summary}</p>
       </section>
+      <Link className="portal-action" to="appeal">Open appeal form</Link>
     </article>
   );
 }

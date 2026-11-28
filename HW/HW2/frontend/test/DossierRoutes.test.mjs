@@ -45,11 +45,21 @@ for (const [playerID, name] of [['himass', 'Himass'], ['tanvuu', 'TanVuu']]) {
 }
 
 test('unknown player IDs and unmatched paths show a 404 with a recovery link', async () => {
-  for (const path of ['/dossier/unknown', '/dossier/__proto__', '/dossier/HIMASS', '/dossier/himass/other', '/dossier', '/other']) {
+  for (const path of ['/dossier/unknown', '/dossier/unknown/appeal', '/dossier/__proto__', '/dossier/HIMASS', '/dossier/himass/other', '/dossier', '/other']) {
     const html = await renderRoute(path);
     assert.match(html, /<h1>404 · Dossier not found<\/h1>/);
     assert.match(html, /<a\b[^>]*href="\/"[^>]*>Back to dossier index<\/a>/);
     assert.ok(!html.includes('aria-current="page"'), `${path} should have no current nav link`);
     assert.doesNotMatch(html, /<dl\b/);
   }
+});
+
+test('a direct appeal route shows the player-scoped form with labeled controls', async () => {
+  const html = await renderRoute('/dossier/tanvuu/appeal');
+  assert.match(html, /<section\b[^>]*aria-labelledby="appeal-title"[^>]*>.*<h1 id="appeal-title">TanVuu appeal<\/h1>/);
+  assert.match(html, /<a\b[^>]*aria-current="page"[^>]*>TanVuu<\/a>/);
+  const controlIds = [...html.matchAll(/<(?:select|textarea|input)\b[^>]*id="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(new Set(controlIds).size, 3);
+  for (const id of controlIds) assert.ok(html.includes(`for="${id}"`));
+  assert.doesNotMatch(html, /<pre>/);
 });

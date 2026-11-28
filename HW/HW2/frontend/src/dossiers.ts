@@ -14,3 +14,5 @@ export const dossiers = [
     summary: 'A classroom exercise in cataloging sample materials and preparing questions for review.',
   },
 ] as const;
+
+export type DossierFixture = (typeof dossiers)[number];

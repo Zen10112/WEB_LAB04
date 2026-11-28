@@ -1,9 +1,12 @@
 // @ts-check
-import { Link, NavLink, Outlet, Route, Routes } from 'react-router';
+import { Link, NavLink, Outlet, Route, Routes, useMatch, useParams } from 'react-router';
 import DossierView, { DossierNotFound } from './DossierView.jsx';
 import { dossiers } from './dossiers';
+import AppealForm from './form/AppealForm.jsx';
+import { FormProvider } from './form/FormContext';
 
 function PortalLayout() {
+  const appealRoute = useMatch({ path: '/dossier/:playerID/appeal', caseSensitive: true });
   return (
     <>
       <header className="portal-header">
@@ -12,7 +15,7 @@ function PortalLayout() {
           <nav className="portal-nav" aria-label="Dossier navigation">
             <NavLink to="/" end>Overview</NavLink>
             {dossiers.map(({ playerID, displayName }) => (
-              <NavLink key={playerID} to={`/dossier/${playerID}`} caseSensitive end>{displayName}</NavLink>
+              <NavLink key={playerID} to={`/dossier/${playerID}`} caseSensitive end={!appealRoute}>{displayName}</NavLink>
             ))}
           </nav>
         </div>
@@ -21,6 +24,18 @@ function PortalLayout() {
         <Outlet />
       </main>
     </>
+  );
+}
+
+function DossierLayout() {
+  const { playerID } = useParams();
+  const dossier = dossiers.find((entry) => entry.playerID === playerID);
+  if (!dossier) return <DossierNotFound />;
+
+  return (
+    <FormProvider key={dossier.playerID}>
+      <Outlet context={dossier} />
+    </FormProvider>
   );
 }
 
@@ -48,7 +63,10 @@ export default function FairPlayAppealPortal() {
     <Routes>
       <Route element={<PortalLayout />}>
         <Route index element={<DossierIndex />} />
-        <Route path="dossier/:playerID" caseSensitive element={<DossierView />} />
+        <Route path="dossier/:playerID" caseSensitive element={<DossierLayout />}>
+          <Route index element={<DossierView />} />
+          <Route path="appeal" caseSensitive element={<AppealForm />} />
+        </Route>
         <Route path="*" element={<DossierNotFound />} />
       </Route>
     </Routes>

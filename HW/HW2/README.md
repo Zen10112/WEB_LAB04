@@ -2,7 +2,7 @@
 
 Himass & TanVuu Case Study · WEB-LAB04 HW2
 
-The frontend and backend are independent npm projects. The frontend opens illustrative dossiers for Himass and TanVuu. The backend currently starts a local Express listener. See [TASK_DECOMPOSITION.md](TASK_DECOMPOSITION.md) for the route contracts and planned form, SLA timer, and persistence API.
+The frontend and backend are independent npm projects. The frontend opens illustrative dossiers for Himass and TanVuu and provides a practice appeal form with synchronous validation and a live JSON preview. The backend currently starts a local Express listener. See [TASK_DECOMPOSITION.md](TASK_DECOMPOSITION.md) for the form and route contracts and the planned SLA timer and persistence API.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5174`. The dossier URLs are `/dossier/himass` and `/dossier/tanvuu`. Run `npm test` in the frontend directory for route tests and `npm run build` to type-check and build it.
+Open `http://localhost:5174`. Choose either dossier and select **Open appeal form**. The preview follows the current valid draft, and **Validate draft** checks it locally. Run `npm test` in the frontend directory for route and validation tests and `npm run build` to type-check and build it.
 
 From `HW/HW2/backend`, run:
 

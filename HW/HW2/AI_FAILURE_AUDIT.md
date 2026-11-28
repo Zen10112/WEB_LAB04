@@ -14,3 +14,23 @@ Record observed AI-generated failures with the affected file, original output, s
 - **Engineering fix** — Add `end` to the dossier `NavLink` so the active state matches the dossier route itself.
 - **Verification** — All four route tests and the TypeScript/Vite build passed after the fix. Chrome confirmed the 404 had no current navigation link and the recovery link worked with Enter.
 - **Status** — Detected & Fixed
+
+## HW2-02 — Invalid-field focus failed type checking
+
+- **Category** — TypeScript and form accessibility
+- **Affected file** — [AppealForm.jsx](frontend/src/form/AppealForm.jsx)
+- **Original AI output** — ``event.currentTarget.querySelector(`[name="${firstError}"]`)?.focus();``
+- **Evidence** — After the form was implemented, `npm run build` failed with `TS2339: Property 'focus' does not exist on type 'Element'.`
+- **Engineering fix** — Find the first invalid control through `form.elements.namedItem()` and narrow it to `HTMLElement` before focusing it.
+- **Verification** — All nine tests and the TypeScript/Vite build passed.
+- **Status** — Detected & Fixed
+
+## HW2-03 — The appeal section referenced a missing heading ID
+
+- **Category** — Accessible name relationships
+- **Affected file** — [AppealForm.jsx](frontend/src/form/AppealForm.jsx)
+- **Original AI output** — The section used `aria-labelledby="appeal-title"`, while its heading was `<h1>{dossier.displayName} appeal</h1>`.
+- **Evidence** — `node --test --test-name-pattern 'direct appeal route' test/DossierRoutes.test.mjs` failed because the rendered heading had no matching `id`.
+- **Engineering fix** — Give the heading `id="appeal-title"` and keep the association covered by the route test.
+- **Verification** — The route regression and full nine-test suite passed.
+- **Status** — Detected & Fixed
